@@ -1,0 +1,106 @@
+html {
+  min-height: 100%;
+  margin: 0px;
+}
+
+body {
+    color: rgb(64, 39, 58);
+    font-size: 16px;
+    margin: 0px auto 0px auto;
+    width: 800px;
+    height: 100%;
+    background: linear-gradient(0deg, rgb(119, 105, 168), rgb(211, 227, 182)) no-repeat;
+    background-color: rgb(119, 105, 168);
+    background-attachment: fixed;
+    font-family: Sansation;
+}
+
+b, strong {
+  font-family: SansationBold;
+}
+
+a {
+  color: rgb(93, 158, 224);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(181, 123, 227);
+}
+
+a:hover {
+  border-bottom: 1px solid rgb(223, 171, 109);
+}
+
+.svenska {
+  color: rgb(61, 56, 72);
+  background-color: white;
+  padding: 10px;
+}
+
+.engelska {
+  color: rgb(61, 56, 72);
+  background-color: rgb(61, 56, 72);
+  padding: 10px;
+}
+
+.engelska:hover {
+  color: rgb(213, 157, 104);
+}
+
+.feedmetadata {
+  color: rgb(163, 166, 144);
+  background-color: rgb(107, 99, 95);
+  padding: 4px 12px 4px 12px;
+  font-size: 9px;
+}
+
+.warning {
+  color: rgb(122, 108, 64);
+  background-color: rgb(226, 211, 115);
+  border: 1px solid rgb(122, 108, 64);
+  padding: 10px;
+  font-weight: bold;
+}
+
+.contentarea {
+  color: black;
+  background-color: white;
+  border: 1px solid black;
+  padding: 10px;
+}
+
+
+h1 {
+    color: #6d456a;
+    font-size: 24px;
+    font-family: Banshee;
+    padding: 30px 0px 5px 0px;
+    border-bottom: 2px solid rgb(64, 39, 58);
+}
+
+h2 {
+    font-size: 20px;
+    font-family: Banshee;
+    padding: 15px 0px 5px 0px;
+    border-bottom: 1px solid rgb(64, 39, 58);
+}
+
+h3 {
+    font-size: 14px;
+    font-family: Banshee;
+    padding: 5px 0px 5px 0px;
+    border-bottom: 1px solid rgb(64, 39, 58);
+}
+
+@font-face{
+	font-family: Banshee;
+	src: url('../fonts/bansheepilotblack.ttf');
+}
+
+@font-face{
+	font-family: Sansation;
+	src: url('../fonts/Sansation_Light.ttf');
+}
+
+@font-face{
+	font-family: SansationBold;
+	src: url('../fonts/Sansation_Regular.ttf');
+}
