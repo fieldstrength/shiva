@@ -19,7 +19,6 @@ import Language.Bing (translate, BingLanguage (..))
 import Data.Text (Text,pack,unpack)
 import qualified Data.Text as T
 import Control.Monad.State
-import Control.Monad.Reader
 import Control.Monad.Error.Class (throwError)
 import qualified Data.ByteString.Char8 as BSC
 import Data.List (intercalate)
@@ -38,7 +37,7 @@ data ShivaResult = ShivaResult
 -- | Core translation function. Used only with counter machinery below.
 trans :: Text -> ShivaM Text
 trans sv = do
-  Config {..} <- ask
+  Config {..} <- appConfig
   mtxt <- liftIO $ translate (BSC.pack clientId) (BSC.pack clientSecret) sv Swedish English
   case mtxt of
     Left err -> throwError (show err)

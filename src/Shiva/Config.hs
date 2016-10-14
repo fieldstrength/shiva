@@ -1,8 +1,25 @@
-{-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric,
+             OverloadedStrings,
+             RecordWildCards #-}
 
 -- | The configuration data type and IO operations to set up, save and load it.
 --   Also aliased for the different layers of the monad transformer stack we employ.
 module Shiva.Config (
+
+  -- * Configuration and App data
+  ShivaConfig (..),
+  ShivaData (..),
+
+  -- ** Data management
+
+  loadConfig,
+  saveConfig,
+  loadEverything,
+
+  -- ** Setup
+  setup,
+
+
   -- * Monads
   IOX,
   ShivaM,
@@ -10,14 +27,10 @@ module Shiva.Config (
 
   runIOX,
 
-  -- * Config
-  ShivaConfig (..),
+-- ** Reader environment access
 
-  -- ** Configuration management
-
-  loadConfig,
-  saveConfig,
-  setup
+  appConfig,
+  appConnection,
 
 ) where
 
@@ -35,13 +48,8 @@ import Data.Bifunctor       (first)
 import Data.Maybe           (fromMaybe)
 import Control.Applicative  ((<|>))
 import Prelude hiding       (writeFile)
+import Database.PostgreSQL.Simple
 
-
-type IOX = ExceptT String IO
-
-type ShivaM = ReaderT ShivaConfig IOX
-
-type CounterM = StateT Int ShivaM
 
 
 data ShivaConfig = Config
@@ -54,6 +62,25 @@ data ShivaConfig = Config
 instance FromJSON ShivaConfig
 instance ToJSON ShivaConfig
 
+connectInfo :: ShivaConfig -> ConnectInfo
+connectInfo Config {..} = defaultConnectInfo { connectUser = dbUser, connectDatabase = dbName }
+
+
+data ShivaData = ShivaData
+  { config :: ShivaConfig
+  , connection :: Connection }
+
+
+-----
+
+
+type IOX = ExceptT String IO
+
+type ShivaM = ReaderT ShivaData IOX
+
+type CounterM = StateT Int ShivaM
+
+
 
 runIOX :: IOX a -> IO a
 runIOX (ExceptT io) = do
@@ -62,6 +89,18 @@ runIOX (ExceptT io) = do
     Left str -> error str
     Right x  -> return x
 
+
+-----
+
+
+appConfig :: ShivaM ShivaConfig
+appConfig = asks config
+
+appConnection :: ShivaM Connection
+appConnection = asks connection
+
+
+-----
 
 homePath :: IOX FilePath
 homePath = ExceptT $ do
@@ -88,6 +127,13 @@ loadPathsConfig = liftIO configPath >>= ExceptT . fmap (first show) . decodeFile
 loadConfig :: IOX ShivaConfig
 loadConfig = loadHomeConfig <|> loadPathsConfig
 
+loadEverything :: IOX ShivaData
+loadEverything = do
+  conf <- loadConfig
+  conn <- liftIO $ connect (connectInfo conf)
+  return $ ShivaData conf conn
+
+
 
 saveConfig :: ShivaConfig -> IOX ()
 saveConfig sc = do
@@ -95,8 +141,8 @@ saveConfig sc = do
   liftIO $ writeFile path (encode sc)
 
 
+----- Setup -----
 
----- Setup ----
 
 enterConfig :: IO ShivaConfig
 enterConfig = do

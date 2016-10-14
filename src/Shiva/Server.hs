@@ -20,19 +20,20 @@ import Control.Monad.IO.Class (liftIO)
 
 ---- Page generation ----
 
-runHtmlGen :: ShivaConfig -> (a -> Html ()) -> ShivaM a -> IO (Html ())
-runHtmlGen conf f =
+runHtmlGen :: ShivaData -> (a -> Html ()) -> ShivaM a -> IO (Html ())
+runHtmlGen d f =
     fmap (either error id) -- not unsafe due to 'catchErrorPage' below
   . runExceptT
-  . flip runReaderT conf
+  . flip runReaderT d
   . catchErrorPage
   . fmap f
 
-generateFeedPage :: ShivaConfig -> String -> IO (Html ())
-generateFeedPage conf t = runHtmlGen conf feedPage (loadFeedDataByTitle t)
 
-generateContentPage :: ShivaConfig -> String -> IO (Html ())
-generateContentPage conf t = runHtmlGen conf resultPage (generateResultFromName t)
+generateFeedPage :: ShivaData -> String -> IO (Html ())
+generateFeedPage d t = runHtmlGen d feedPage (loadFeedDataByTitle t)
+
+generateContentPage :: ShivaData -> String -> IO (Html ())
+generateContentPage d t = runHtmlGen d resultPage (generateResultFromName t)
 
 
 ---- Server ----
@@ -40,26 +41,26 @@ generateContentPage conf t = runHtmlGen conf resultPage (generateResultFromName 
 getStaticPath :: IO FilePath
 getStaticPath = getDataFileName "static"
 
-server :: FilePath -> ShivaConfig -> IO ()
-server staticPath conf = scotty 7777 $ do
+server :: FilePath -> ShivaData -> IO ()
+server staticPath d = scotty 7777 $ do
   middleware $ staticPolicy (noDots >-> addBase staticPath)
 
   get "/" $ html . renderText $ mainPage
 
   get "/sources/:x" $ do
     x <- param "x"
-    html =<< renderText <$> liftIO (generateFeedPage conf x)
+    html =<< renderText <$> liftIO (generateFeedPage d x)
 
   get "/content/dn/:x" $ do
     x <- param "x"
-    html =<< renderText <$> liftIO (generateContentPage conf x)
+    html =<< renderText <$> liftIO (generateContentPage d x)
 
 
 -- | Run the server (as an installed executable).
 runServer :: IO ()
 runServer = do
   path <- getStaticPath
-  mconf <- runExceptT loadConfig
+  mconf <- runExceptT loadEverything
   case mconf of
     Right conf -> server path conf
     Left err   -> do
@@ -69,7 +70,7 @@ runServer = do
 -- | Run the server (from within ghci). Uses the repo's 'static' path instead of one
 --   set up by Stack or Cabal.
 test :: IO ()
-test = runIOX loadConfig >>= server "static"
+test = runIOX loadEverything >>= server "static"
 
 
 
