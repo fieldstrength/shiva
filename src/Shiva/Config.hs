@@ -10,10 +10,9 @@ module Shiva.Config (
   ShivaConfig (..),
   ShivaData (..),
 
-  -- ** Data management
+  -- ** Load data
 
   loadConfig,
-  saveConfig,
   loadEverything,
 
   -- ** Setup
@@ -132,13 +131,6 @@ loadEverything = do
   conf <- loadConfig
   conn <- liftIO $ connect (connectInfo conf)
   return $ ShivaData conf conn
-
-
-
-saveConfig :: ShivaConfig -> IOX ()
-saveConfig sc = do
-  path <- configHomePath
-  liftIO $ writeFile path (encode sc)
 
 
 ----- Setup -----
