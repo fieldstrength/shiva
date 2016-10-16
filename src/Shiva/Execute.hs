@@ -11,21 +11,17 @@ import Shiva.Config
 import Shiva.Database
 import Shiva.Translation
 import Shiva.HTML
-import Shiva.Extract
+import Shiva.Sources (extractDN)
+import Shiva.Get (httpGet)
 
 import Data.Bifunctor (first, second)
 import Prelude hiding (lookup)
 import Data.List (sortBy)
 import Data.Map (Map,lookup,fromList)
 import Lucid
-import Control.Monad.Except
 import Control.Monad.Error.Class (throwError, catchError)
 import Control.Monad.State (lift)
-import Network.HTTP.Conduit
-import Control.Exception (catch)
 import Data.Text (Text,unpack)
-import Data.Text.Encoding (decodeUtf8)
-import Data.ByteString.Lazy (toStrict)
 
 
 readMetadataMap :: Source -> ShivaM (Map String String)
@@ -33,7 +29,7 @@ readMetadataMap = fmap fromList . readPairs
 
 subStep :: Map String String -> FeedItem -> ([FeedItem],[FeedItem]) -> ([FeedItem],[FeedItem])
 subStep m i = case lookup (svTitle i) m of
-  Just eng -> let d = i {enTitle = eng} in first (d:)
+  Just eng -> first  (d:) where d = i {enTitle = eng}
   Nothing  -> second (i:)
 
 subMetadata :: Map String String -> [FeedItem] -> ([FeedItem],[FeedItem])
@@ -74,15 +70,10 @@ genResult sv en =
       ps  = zipWithDefault SvenskaPair "" svs ens
   in ShivaResult (length svs == length ens) ps
 
-
-reportHttpException :: HttpException -> IO (Either String a)
-reportHttpException = return . Left . show
-
 retrieveContent :: String -> IOX Text
-retrieveContent url = ExceptT $ do
-  bs <- fmap Right (simpleHttp url) `catch` reportHttpException
-  let txt = extractDN . decodeUtf8 . toStrict <$> bs
-  return txt
+retrieveContent url = do
+  txt <- httpGet url
+  return $ extractDN txt
 
 generateContentResult :: FeedItem -> ShivaM ShivaResult
 generateContentResult di = do

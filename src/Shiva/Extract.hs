@@ -3,7 +3,6 @@
 -- | For extracting article content from HTML.
 module Shiva.Extract (
   extractDivId,
-  extractDN,
 ) where
 
 import Text.HTML.TagSoup
@@ -47,9 +46,6 @@ extractDivIdTags i = takeContentTags 1 . noScript . tail_ . dropWhile (not . div
 
 extractDivId :: StringLike a => a -> a -> a
 extractDivId i = innerText . extractDivIdTags i . parseTags
-
-extractDN :: StringLike a => a -> a
-extractDN = extractDivId "article__body-content"
 
 sep :: (a -> Bool) -> [a] -> ([a],[a])
 sep q l = runSep q ([],l)

@@ -1,6 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Shiva.Sources where
 
-import Shiva.Extract (extractDN)
+import Shiva.Extract (extractDivId)
 
 import Data.Map  (Map, fromList)
 import Data.Char (toLower)
@@ -17,17 +19,24 @@ data Source = Source
 titleCode :: Source -> String
 titleCode = intercalate "-" . words . map toLower . sourceTitle
 
-codeMap :: Map String Source
-codeMap = fromList $ zip (titleCode <$> sources) sources
+
+-----
 
 
----
+extractDN :: Text -> Text
+extractDN = extractDivId "article__body-content"
 
 latestNews, economy, stockholm :: Source
 latestNews = Source "Latest News" "http://www.dn.se/rss/senaste-nytt/" extractDN
 economy    = Source "Economy"     "http://www.dn.se/ekonomi/rss/"      extractDN
 stockholm  = Source "Stockholm"   "http://www.dn.se/sthlm/rss/"        extractDN
 
-
 sources :: [Source]
 sources = [latestNews, economy, stockholm]
+
+
+-----
+
+
+codeMap :: Map String Source
+codeMap = fromList $ zip (titleCode <$> sources) sources
