@@ -8,6 +8,7 @@ module Shiva.Server (
 import Shiva.HTML
 import Shiva.Execute
 import Shiva.Config
+import Shiva.Sources
 import Paths_shiva (getDataFileName)
 
 import Web.Scotty
@@ -57,10 +58,10 @@ server staticPath d = scotty 7777 $ do
 
 
 -- | Run the server (as an installed executable).
-runServer :: IO ()
-runServer = do
+runServer :: [Source] -> IO ()
+runServer srcs = do
   path <- getStaticPath
-  mconf <- runExceptT loadEverything
+  mconf <- runExceptT (loadEverything srcs)
   case mconf of
     Right conf -> server path conf
     Left err   -> do
@@ -70,7 +71,7 @@ runServer = do
 -- | Run the server (from within ghci). Uses the repo's 'static' path instead of one
 --   set up by Stack or Cabal.
 test :: IO ()
-test = runIOX loadEverything >>= server "static"
+test = runIOX (loadEverything sources) >>= server "static"
 
 
 

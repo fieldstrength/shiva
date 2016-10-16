@@ -2,6 +2,7 @@ module Main where
 
 import Shiva.Server        (runServer)
 import Shiva.Config        (setup)
+import Shiva.Sources       (sources)
 
 import System.Environment  (getArgs)
 import System.Process      (callCommand)
@@ -18,6 +19,6 @@ main = do
   args <- getArgs
   case args of
     ["setup"]  -> setup
-    ["server"] -> runServer
-    []         -> forkIO launch *> runServer
+    ["server"] -> runServer sources
+    []         -> forkIO launch *> runServer sources
     _          -> putStrLn "Unrecognized command."

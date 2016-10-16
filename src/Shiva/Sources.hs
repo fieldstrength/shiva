@@ -2,25 +2,10 @@
 
 module Shiva.Sources where
 
+import Shiva.Config  (Source (..))
 import Shiva.Extract (extractDivId)
 
-import Data.Map  (Map, fromList)
-import Data.Char (toLower)
-import Data.List (intercalate)
-import Data.Text (Text)
-
-
-
-data Source = Source
-  { sourceTitle :: String
-  , feedUrl :: String
-  , contentExtractor :: Text -> Text }
-
-titleCode :: Source -> String
-titleCode = intercalate "-" . words . map toLower . sourceTitle
-
-
------
+import Data.Text     (Text)
 
 
 extractDN :: Text -> Text
@@ -33,10 +18,3 @@ stockholm  = Source "Stockholm"   "http://www.dn.se/sthlm/rss/"        extractDN
 
 sources :: [Source]
 sources = [latestNews, economy, stockholm]
-
-
------
-
-
-codeMap :: Map String Source
-codeMap = fromList $ zip (titleCode <$> sources) sources

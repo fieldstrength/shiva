@@ -53,9 +53,11 @@ loadFeedData src = do
   return $ fd { feedItems = sortBy (flip compare) (xs ++ zs) }
 
 loadFeedDataByTitle :: String -> ShivaM FeedData
-loadFeedDataByTitle str = case lookup str codeMap of
-  Just src -> loadFeedData src
-  Nothing -> throwError "I don't recognize any feed with that title"
+loadFeedDataByTitle str = do
+  cmap <- codeMap <$> appSources
+  case lookup str cmap of
+    Just src -> loadFeedData src
+    Nothing -> throwError "I don't recognize any feed with that title"
 
 
 catchErrorPage :: ShivaM (Html ()) -> ShivaM (Html ())

@@ -3,10 +3,6 @@
 module Shiva.Feeds (
   FeedData (..),
   FeedItem (..),
-  Source (..),
-  sources,
-  titleCode,
-  codeMap,
   showTime,
   parseTime,
   parseTime',
@@ -15,8 +11,7 @@ module Shiva.Feeds (
 
 import Shiva.Config
 import Shiva.Utils                (nothingMsg, safeHead, safeLast, separate)
-import Shiva.Sources
-import Shiva.Get
+import Shiva.Get                  (httpGet)
 
 import Control.Monad              ((<=<))
 import Data.Maybe                 (fromJust, catMaybes)

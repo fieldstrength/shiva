@@ -9,6 +9,10 @@ module Shiva.Config (
   -- * Configuration and App data
   ShivaConfig (..),
   ShivaData (..),
+  Source (..),
+
+  titleCode,
+  codeMap,
 
   -- ** Load data
 
@@ -30,6 +34,8 @@ module Shiva.Config (
 
   appConfig,
   appConnection,
+  appSources,
+
 
 ) where
 
@@ -37,7 +43,7 @@ import Paths_shiva          (getDataFileName)
 
 import GHC.Generics         (Generic)
 import Data.Yaml.Aeson      (FromJSON, ToJSON, encode, decodeFileEither)
-import Data.List            (isSuffixOf)
+import Data.List            (isSuffixOf, intercalate)
 import System.Environment   (lookupEnv)
 import Data.ByteString      (writeFile)
 import Control.Monad.Except
@@ -47,6 +53,9 @@ import Data.Bifunctor       (first)
 import Data.Maybe           (fromMaybe)
 import Control.Applicative  ((<|>))
 import Prelude hiding       (writeFile)
+import Data.Text            (Text)
+import Data.Char            (toLower)
+import Data.Map             (Map, fromList)
 import Database.PostgreSQL.Simple
 
 
@@ -65,9 +74,23 @@ connectInfo :: ShivaConfig -> ConnectInfo
 connectInfo Config {..} = defaultConnectInfo { connectUser = dbUser, connectDatabase = dbName }
 
 
+data Source = Source
+  { sourceTitle :: String
+  , feedUrl :: String
+  , contentExtractor :: Text -> Text }
+
+titleCode :: Source -> String
+titleCode = intercalate "-" . words . map toLower . sourceTitle
+
+codeMap :: [Source] -> Map String Source
+codeMap srcs = fromList $ zip (titleCode <$> srcs) srcs
+
 data ShivaData = ShivaData
   { config :: ShivaConfig
-  , connection :: Connection }
+  , connection :: Connection
+  , sourceList :: [Source] }
+
+
 
 
 -----
@@ -98,6 +121,9 @@ appConfig = asks config
 appConnection :: ShivaM Connection
 appConnection = asks connection
 
+appSources :: ShivaM [Source]
+appSources = asks sourceList
+
 
 -----
 
@@ -126,11 +152,11 @@ loadPathsConfig = liftIO configPath >>= ExceptT . fmap (first show) . decodeFile
 loadConfig :: IOX ShivaConfig
 loadConfig = loadHomeConfig <|> loadPathsConfig
 
-loadEverything :: IOX ShivaData
-loadEverything = do
+loadEverything :: [Source] -> IOX ShivaData
+loadEverything srcs = do
   conf <- loadConfig
   conn <- liftIO $ connect (connectInfo conf)
-  return $ ShivaData conf conn
+  return $ ShivaData conf conn srcs
 
 
 ----- Setup -----
