@@ -72,6 +72,7 @@ loadRSS url = do
 
 data FeedItem = FeedItem
   { itemTime :: UTCTime
+  , sourceName :: String
   , svTitle :: String
   , enTitle :: String
   , urlFrag :: String
@@ -85,9 +86,10 @@ data FeedData = FeedData
 extractRSSItems :: RSS -> [RSSItem]
 extractRSSItems = rssItems . rssChannel
 
-mkPrelim :: RSSItem -> Err FeedItem
-mkPrelim RSSItem {..} = FeedItem
+mkPrelim :: String -> RSSItem -> Err FeedItem
+mkPrelim srcName RSSItem {..} = FeedItem
   <$> nothingMsg "Date invalid or missing" (rssItemPubDate >>= parseTime)
+  <*> pure srcName
   <*> nothingMsg "Title invalid or missing" rssItemTitle
   <*> pure ""
   <*> linkMsg (rssItemLink >>= extractURLFrag)
@@ -96,13 +98,10 @@ mkPrelim RSSItem {..} = FeedItem
           extractURLFrag = safeLast . separate '/'
 
 
-loadItems :: String -> IOX [Err FeedItem]
-loadItems url = map mkPrelim . extractRSSItems <$> loadRSS url
-
-loadPrelimItems :: String -> IOX FeedData
-loadPrelimItems url = do
-  mxs <- loadItems url
-  return $ FeedData (rights mxs) (lefts mxs)
+loadItems :: String -> String -> IOX [Err FeedItem]
+loadItems name url = map (mkPrelim name) . extractRSSItems <$> loadRSS url
 
 loadFeedPrelim :: Source -> IOX FeedData
-loadFeedPrelim = loadPrelimItems . feedUrl
+loadFeedPrelim Source {..} = do
+  mxs <- loadItems sourceTitle feedUrl
+  return $ FeedData (rights mxs) (lefts mxs)

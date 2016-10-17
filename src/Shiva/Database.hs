@@ -27,24 +27,23 @@ runDbAction :: (Connection -> IO a) -> ShivaM a
 runDbAction fio = liftIO . fio =<< appConnection
 
 
-tuplize :: Source -> FeedItem -> (String,String,String,String,String,String)
-tuplize src p = (showTime (itemTime p), sourceTitle src, svTitle p, enTitle p, urlFrag p, urlFull p)
+tuplize :: FeedItem -> (String,String,String,String,String,String)
+tuplize p = (showTime (itemTime p), sourceName p, svTitle p, enTitle p, urlFrag p, urlFull p)
 
 deTuplize :: (String,String,String,String,String,String) -> FeedItem
-deTuplize (_,t,s,e,u,v) = FeedItem (parseTime' t) s e u v
+deTuplize (src,t,s,e,u,v) = FeedItem (parseTime' t) src s e u v
 
 
-writeAritcleMetadata :: Source -> [FeedItem] -> ShivaM ()
-writeAritcleMetadata cat xs = runDbAction $ \conn -> void $
+writeAritcleMetadata :: [FeedItem] -> ShivaM ()
+writeAritcleMetadata xs = runDbAction $ \conn -> void $
   executeMany conn
   "INSERT INTO articleMetaData (date, category, svTitle, enTitle, urlFrag, urlFull) VALUES (?,?,?,?,?,?)" $
-  tuplize cat <$> xs
+  tuplize <$> xs
 
 readArticleMetadata :: String -> ShivaM (Maybe FeedItem)
 readArticleMetadata name = runDbAction $ \conn -> do
   l <- query conn "SELECT * FROM articleMetaData WHERE urlFrag = ?" (Only name)
   return . safeHead $ deTuplize <$> l
-
 
 readPairs :: Source -> ShivaM [(String,String)]
 readPairs src = runDbAction $ \conn ->

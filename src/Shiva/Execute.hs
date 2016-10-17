@@ -49,7 +49,7 @@ loadFeedData src = do
   m  <- readMetadataMap src
   let (xs,ys) = subMetadata m (feedItems fd)
   zs <- translateTitles ys
-  writeAritcleMetadata src zs
+  writeAritcleMetadata zs
   return $ fd { feedItems = sortBy (flip compare) (xs ++ zs) }
 
 loadFeedDataByTitle :: String -> ShivaM FeedData
