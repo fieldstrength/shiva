@@ -3,35 +3,39 @@
 -- | For extracting article content from HTML.
 module Shiva.Extract (
   extractDivId,
+  extractDivsWithIds
 ) where
 
 import Text.HTML.TagSoup
-import Text.StringLike (StringLike)
+import Text.StringLike (StringLike,strConcat)
 import Text.HTML.TagSoup.Match
 import Prelude hiding (writeFile,readFile)
+
+
+----- Removing script tags -----
+
+dropScript :: StringLike a => [Tag a] -> [Tag a]
+dropScript [] = []
+dropScript ts = before ++ (dropScript . snd . sepClosed) after
+  where sepOpen = sep $ tagOpenNameLit "script"
+        sepClosed = sep $ tagCloseNameLit "script"
+        (before,after) = sepOpen ts
+
+-- Separate list into elements before and after the first predicate-satisfying element
+sep :: (a -> Bool) -> [a] -> ([a],[a])
+sep q l = runSep q ([],l)
+  where runSep _ (xs,[])   = (reverse xs,[])
+        runSep p (xs,y:ys) = if p y then (reverse xs,ys) else runSep p (y:xs,ys)
+
+
+----- Extract from divs with specified Ids -----
 
 
 isDivOpen :: StringLike a => Tag a -> Bool
 isDivOpen = tagOpen (=="div") (const True)
 
-
 isDivClose :: StringLike a => Tag a -> Bool
 isDivClose = tagClose (=="div")
-
-noScript :: StringLike a => [Tag a] -> [Tag a]
-noScript [] = []
-noScript (t:ts) | tagOpen (=="script") (const True) t = dropScript ts
-                | otherwise = t : noScript ts
-  where dropScript :: StringLike a => [Tag a] -> [Tag a]
-        dropScript = snd . sep (tagClose (=="script"))
-
-tail_ :: [a] -> [a]
-tail_ [] = []
-tail_ (_:xs) = xs
-
-divOpenWithId :: StringLike a => a -> Tag a -> Bool
-divOpenWithId i = tagOpen (=="div") (elem ("class",i))
-
 
 takeContentTags :: StringLike a => Int -> [Tag a] -> [Tag a]
 takeContentTags 0 _      = []
@@ -41,16 +45,39 @@ takeContentTags n (t:ts) | isDivOpen  t = takeContentTags (n+1) ts
                          | otherwise    = t : takeContentTags n ts
 
 
-extractDivIdTags :: StringLike a => a -> [Tag a] -> [Tag a]
-extractDivIdTags i = takeContentTags 1 . noScript . tail_ . dropWhile (not . divOpenWithId i)
+-----
+
+
+tail_ :: [a] -> [a]
+tail_ [] = []
+tail_ (_:xs) = xs
+
+divOpenWithId :: StringLike a => a -> Tag a -> Bool
+divOpenWithId i = tagOpenAttrLit "div" ("class",i)
 
 extractDivId :: StringLike a => a -> a -> a
-extractDivId i = innerText . extractDivIdTags i . parseTags
+extractDivId i = innerText
+               . takeContentTags 1
+               . dropScript
+               . tail_
+               . dropWhile (not . divOpenWithId i)
+               . parseTags
 
-sep :: (a -> Bool) -> [a] -> ([a],[a])
-sep q l = runSep q ([],l)
-  where runSep _ (xs,[])   = (reverse xs,[])
-        runSep p (xs,y:ys) = if p y then (reverse xs,ys) else runSep p (y:xs,ys)
+-----
+
+prepTags :: StringLike a => a -> [Tag a]
+prepTags = dropScript . parseTags
+
+extractDivTextWithId :: StringLike a => a -> [Tag a] -> a
+extractDivTextWithId i = innerText
+                       . takeContentTags 1
+                       . tail_
+                       . dropWhile (not . divOpenWithId i)
+
+extractDivsWithIds :: StringLike a => [a] -> a -> a
+extractDivsWithIds ids str = strConcat $ extractDivTextWithId <$> ids <*> [prepTags str]
+
+
 
 
 {-

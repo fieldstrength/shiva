@@ -1,15 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Shiva.Sources where
+module Shiva.Sources (
+  extractDN,
+  sources,
+) where
 
 import Shiva.Config  (Source (..))
-import Shiva.Extract (extractDivId)
+import Shiva.Extract (extractDivsWithIds)
 
 import Data.Text     (Text)
 
 
 extractDN :: Text -> Text
-extractDN = extractDivId "article__body-content"
+extractDN = extractDivsWithIds ["article__body-grid-item article__lead", "article__body-content"]
 
 latestNews, economy, stockholm :: Source
 latestNews = Source "Latest News" "http://www.dn.se/rss/senaste-nytt/" extractDN
