@@ -31,7 +31,7 @@ tuplize :: FeedItem -> (String,String,String,String,String,String)
 tuplize p = (showTime (itemTime p), sourceName p, svTitle p, enTitle p, urlFrag p, urlFull p)
 
 deTuplize :: (String,String,String,String,String,String) -> FeedItem
-deTuplize (src,t,s,e,u,v) = FeedItem (parseTime' t) src s e u v
+deTuplize (t,src,s,e,u,v) = FeedItem (parseTime' t) src s e u v
 
 
 writeAritcleMetadata :: [FeedItem] -> ShivaM ()

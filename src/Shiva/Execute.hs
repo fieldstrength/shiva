@@ -1,6 +1,8 @@
+{-# LANGUAGE RecordWildCards #-}
+
 -- | Assembles functionality from several modules to perform main business logic.
 module Shiva.Execute (
-  loadFeedDataByTitle,
+  loadFeedByTitleCode,
   generateResultFromName,
   catchErrorPage,
 ) where
@@ -11,7 +13,6 @@ import Shiva.Config
 import Shiva.Database
 import Shiva.Translation
 import Shiva.HTML
-import Shiva.Sources (extractDN)
 import Shiva.Get (httpGet)
 
 import Data.Bifunctor (first, second)
@@ -52,10 +53,10 @@ loadFeedData src = do
   writeAritcleMetadata zs
   return $ fd { feedItems = sortBy (flip compare) (xs ++ zs) }
 
-loadFeedDataByTitle :: String -> ShivaM FeedData
-loadFeedDataByTitle str = do
-  cmap <- codeMap <$> appSources
-  case lookup str cmap of
+loadFeedByTitleCode :: String -> ShivaM FeedData
+loadFeedByTitleCode code = do
+  msrc <- codeLookup code
+  case msrc of
     Just src -> loadFeedData src
     Nothing -> throwError "I don't recognize any feed with that title"
 
@@ -72,19 +73,22 @@ genResult sv en =
       ps  = zipWithDefault SvenskaPair "" svs ens
   in ShivaResult (length svs == length ens) ps
 
-retrieveContent :: String -> IOX Text
-retrieveContent url = do
-  txt <- httpGet url
-  return $ extractDN txt
+retrieveContent :: FeedItem -> ShivaM Text
+retrieveContent FeedItem {..} = do
+  txt <- lift $ httpGet urlFull
+  msrc <- srcLookup sourceName
+  case msrc of
+    Just Source {..} -> return $ contentExtractor txt
+    Nothing          -> throwError $ "retrieveContent: unknown sourceName '" ++ sourceName ++ "'."
 
 generateContentResult :: FeedItem -> ShivaM ShivaResult
-generateContentResult di = do
-  mx <- readContentData (urlFrag di)
+generateContentResult fi@FeedItem {..} = do
+  mx <- readContentData urlFrag
   case mx of
     Just (s,e) -> return $ genResult s e
     Nothing    -> do
-      art <- lift $ retrieveContent (urlFull di)
-      translateSaveBodyText (urlFrag di) (unpack art)
+      art <- retrieveContent fi
+      translateSaveBodyText urlFrag (unpack art)
 
 generateResultFromName :: String -> ShivaM ShivaResult
 generateResultFromName name = do

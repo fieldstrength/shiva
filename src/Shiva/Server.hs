@@ -31,7 +31,7 @@ runHtmlGen d f =
 
 
 generateFeedPage :: ShivaData -> String -> IO (Html ())
-generateFeedPage d t = runHtmlGen d feedPage (loadFeedDataByTitle t)
+generateFeedPage d t = runHtmlGen d feedPage (loadFeedByTitleCode t)
 
 generateContentPage :: ShivaData -> String -> IO (Html ())
 generateContentPage d t = runHtmlGen d resultPage (generateResultFromName t)

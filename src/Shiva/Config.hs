@@ -12,7 +12,6 @@ module Shiva.Config (
   Source (..),
 
   titleCode,
-  codeMap,
 
   -- ** Load data
 
@@ -35,11 +34,14 @@ module Shiva.Config (
   appConfig,
   appConnection,
   appSources,
+  srcLookup,
+  codeLookup
 
 
 ) where
 
 import Paths_shiva          (getDataFileName)
+import Shiva.Utils          (safeHead)
 
 import GHC.Generics         (Generic)
 import Data.Yaml.Aeson      (FromJSON, ToJSON, encode, decodeFileEither)
@@ -52,10 +54,9 @@ import Control.Monad.State
 import Data.Bifunctor       (first)
 import Data.Maybe           (fromMaybe)
 import Control.Applicative  ((<|>))
-import Prelude hiding       (writeFile)
+import Prelude hiding       (writeFile,lookup)
 import Data.Text            (Text)
 import Data.Char            (toLower)
-import Data.Map             (Map, fromList)
 import Database.PostgreSQL.Simple
 
 
@@ -82,15 +83,10 @@ data Source = Source
 titleCode :: Source -> String
 titleCode = intercalate "-" . words . map toLower . sourceTitle
 
-codeMap :: [Source] -> Map String Source
-codeMap srcs = fromList $ zip (titleCode <$> srcs) srcs
-
 data ShivaData = ShivaData
   { config :: ShivaConfig
   , connection :: Connection
   , sourceList :: [Source] }
-
-
 
 
 -----
@@ -123,6 +119,18 @@ appConnection = asks connection
 
 appSources :: ShivaM [Source]
 appSources = asks sourceList
+
+-- | Look up a source by name.
+srcLookup :: String -> ShivaM (Maybe Source)
+srcLookup name = do
+  srcs <- appSources
+  return $ safeHead [ x | x <- srcs, sourceTitle x == name ]
+
+-- | Look up a source by title code, the name format used in URLs.
+codeLookup :: String -> ShivaM (Maybe Source)
+codeLookup code = do
+  srcs <- appSources
+  return $ safeHead [ x | x <- srcs, titleCode x == code ]
 
 
 -----
