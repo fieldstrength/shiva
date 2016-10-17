@@ -8,14 +8,12 @@ module Shiva.Config (
 
   -- * Configuration and App data
   ShivaConfig (..),
-  ShivaData (..),
   Source (..),
-
   titleCode,
+  ShivaData (..),
 
   -- ** Load data
 
-  loadConfig,
   loadEverything,
 
   -- ** Setup
@@ -60,7 +58,8 @@ import Data.Char            (toLower)
 import Database.PostgreSQL.Simple
 
 
-
+-- | Application data saved in a local config file. Information for Microsoft Translator API and
+--   database name and user.
 data ShivaConfig = Config
   { clientId :: String
   , clientSecret :: String
@@ -75,14 +74,18 @@ connectInfo :: ShivaConfig -> ConnectInfo
 connectInfo Config {..} = defaultConnectInfo { connectUser = dbUser, connectDatabase = dbName }
 
 
+-- | Data related to a source of news articles accessed via RSS.
 data Source = Source
   { sourceTitle :: String
   , feedUrl :: String
   , contentExtractor :: Text -> Text }
 
+
+-- | The representation of the source title used in the corresponding URL (lowercase, dash-separated).
 titleCode :: Source -> String
 titleCode = intercalate "-" . words . map toLower . sourceTitle
 
+-- | All data needed
 data ShivaData = ShivaData
   { config :: ShivaConfig
   , connection :: Connection
@@ -160,6 +163,7 @@ loadPathsConfig = liftIO configPath >>= ExceptT . fmap (first show) . decodeFile
 loadConfig :: IOX ShivaConfig
 loadConfig = loadHomeConfig <|> loadPathsConfig
 
+-- | Load all data needed by the application and initiate database connection.
 loadEverything :: [Source] -> IOX ShivaData
 loadEverything srcs = do
   conf <- loadConfig
@@ -195,6 +199,7 @@ yn = do
     'n':_ -> return False
     _     -> putStrLn "Please answer yes or no (y/n): " *> yn
 
+-- | Command line script to enter and save app configuration data.
 setup :: IO ()
 setup = do
   conf <- enterConfig

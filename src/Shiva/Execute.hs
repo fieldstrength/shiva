@@ -37,12 +37,11 @@ subMetadata :: Map String String -> [FeedItem] -> ([FeedItem],[FeedItem])
 subMetadata m = foldr (subStep m) ([],[])
 
 
--- | Take list of feed items without english titles, fill them in by translating the swedish titles
+-- | Take list of feed items without english titles, fill them in by translating the swedish titles.
 translateTitles :: [FeedItem] -> ShivaM [FeedItem]
 translateTitles ds = do
   ps <- translateSet' $ svTitle <$> ds
   return $ zipWith (\d p -> d {enTitle = english p }) ds ps
-
 
 loadFeedData :: Source -> ShivaM FeedData
 loadFeedData src = do
@@ -53,6 +52,7 @@ loadFeedData src = do
   writeAritcleMetadata zs
   return $ fd { feedItems = sortBy (flip compare) (xs ++ zs) }
 
+-- | Load the RSS feed page for a given 'Source' by specifying it's 'titleCode'.
 loadFeedByTitleCode :: String -> ShivaM FeedData
 loadFeedByTitleCode code = do
   msrc <- codeLookup code
@@ -61,6 +61,7 @@ loadFeedByTitleCode code = do
     Nothing -> throwError "I don't recognize any feed with that title"
 
 
+-- | If an error is encountered in the ShivaM monad, report the error with a webpage.
 catchErrorPage :: ShivaM (Html ()) -> ShivaM (Html ())
 catchErrorPage sh = catchError sh $ return . errorPage
 
@@ -90,9 +91,11 @@ generateContentResult fi@FeedItem {..} = do
       art <- retrieveContent fi
       translateSaveBodyText urlFrag (unpack art)
 
+-- | Used to generate a web page for an article, identified by a part of a URL. This relies on the
+--   article metadata already being in the database, due to its appearing in an RSS listing page.
 generateResultFromName :: String -> ShivaM ShivaResult
-generateResultFromName name = do
-  md <- readArticleMetadata name
+generateResultFromName urlfrag = do
+  md <- readArticleMetadata urlfrag
   case md of
     Just d  -> generateContentResult d
     Nothing -> throwError "Article by that name seems to be missing."
