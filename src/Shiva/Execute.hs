@@ -40,7 +40,7 @@ subMetadata m = foldr (subStep m) ([],[])
 -- | Take list of feed items without english titles, fill them in by translating the swedish titles.
 translateTitles :: [FeedItem] -> ShivaM [FeedItem]
 translateTitles ds = do
-  ps <- translateSet' $ svTitle <$> ds
+  ps <- translateSet $ svTitle <$> ds
   return $ zipWith (\d p -> d {enTitle = english p }) ds ps
 
 loadFeedData :: Source -> ShivaM FeedData
@@ -104,8 +104,7 @@ generateResultFromName urlfrag = do
 -- | Take an URL fragment (functioning as an identifier) and text, then translate the text and
 --   save the result.
 translateSaveBodyText :: String -> String -> ShivaM ShivaResult
-translateSaveBodyText name sv = do
-  let psv = prep sv
-  en <- runTrans psv
-  writeContentData (name,psv,en)
-  return $ genResult psv en
+translateSaveBodyText ufrag sv = do
+  TransResult {..} <- translateSet'' sv
+  writeContentData (ufrag,svTxt,enTxt)
+  return theresult

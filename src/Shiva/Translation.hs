@@ -1,14 +1,19 @@
-{-# LANGUAGE ViewPatterns,
-             RecordWildCards #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Shiva.Translation (
   SvenskaPair (..),
   ShivaResult (..),
   runTrans,
-  translateSet',
+  translateSet,
+  translateSentences,
   prep,
+  prepSep,
   divOn,
   zipWithDefault,
+
+  TransResult (..),
+  translateSet'',
+
 ) where
 
 import Shiva.Config
@@ -22,7 +27,6 @@ import Control.Monad.State
 import Control.Monad.Error.Class (throwError)
 import qualified Data.ByteString.Char8 as BSC
 import Data.List (intercalate)
-import Data.Foldable (toList)
 
 
 data SvenskaPair = SvenskaPair
@@ -69,16 +73,44 @@ runTrans = fmap unpack . runCounter . shivaTrans . pack
 
 ---- Translating sets of sentences ----
 
-translateSet :: Foldable f => f String -> ShivaM ShivaResult
-translateSet (toList -> svs) = do
+-- Some unnecessary complexity here. Very occassionally the translation eats our separator, '|'.
+-- This results in a mismatch in the formed result. In these cases, we use punctuation to separate
+-- sentences. While this may not be 100% perfect either, the rate of coincidence of these two
+-- potential problems should be very small.
+translateSet' :: [String] -> ShivaM ShivaResult
+translateSet' svs = do
   let pstr = prepSet svs
   en <- runTrans pstr
   let ens = divOn '|' en
-  return $ ShivaResult (length svs == length ens) $ zipWithDefault SvenskaPair "" svs ens
+  if length svs == length ens
+    then return $ ShivaResult True $ zipWith SvenskaPair svs ens
+    else let ens' = sentences $ unwords ens
+         in  return $ ShivaResult (length svs == length ens') $
+               zipWithDefault SvenskaPair "" svs ens'
 
-translateSet' :: Foldable f => f String -> ShivaM [SvenskaPair]
-translateSet' = fmap result . translateSet
 
+data TransResult = TransResult
+  { theresult :: ShivaResult
+  , svTxt :: String
+  , enTxt :: String }
+
+translateSet'' :: String -> ShivaM TransResult
+translateSet'' sv = do
+  let psv = prep sv
+  pen <- runTrans psv
+  let ens = divOn '|' pen
+      svs = divOn '|' psv
+      ens' = sentences $ unwords ens
+      r = if length svs == length ens then ShivaResult True $ zipWith SvenskaPair svs ens
+                                      else ShivaResult (length svs == length ens') $ zipWithDefault SvenskaPair "" svs ens'
+  return $ TransResult r psv pen
+
+
+translateSet :: [String] -> ShivaM [SvenskaPair]
+translateSet = fmap result . translateSet'
+
+translateSentences :: String -> ShivaM [SvenskaPair]
+translateSentences = translateSet . prepSep
 
 ---- Preparation I: Prepare a list of phrases for translation ----
 
@@ -110,9 +142,14 @@ sep' x l = runSep x ([],l)
 ---- Preparation II: Prepare a body of text, separating into sentences ----
 
 -- | Remove any current instances of the '|' character. Then separate into sentences and
---   separate them with |.
+--   delineate them with |.
 prep :: String -> String
 prep = intercalate " | " . sentences . replace '|' '~'
+
+-- | Remove any current instances of the '|' character. Then separate into sentences and
+--   delineate them with |.
+prepSep :: String -> [String]
+prepSep = sentences . replace '|' '~'
 
 ---- Separating by sentence ----
 
