@@ -33,7 +33,7 @@ timeFormat1 = "%a, %e %b %Y %H:%M:%S %z"
 timeFormat2 :: String
 timeFormat2 = "%a, %e %b %Y %H:%M:%S %Z"
 
--- | If any other time formats incountered, add them to this list.
+-- | If any other time formats are encountered, add them to this list.
 timeFormats :: [String]
 timeFormats = [timeFormat1,timeFormat2]
 

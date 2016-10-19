@@ -12,7 +12,8 @@ module Shiva.Translation (
   zipWithDefault,
 
   TransResult (..),
-  translateSet'',
+  TransArticle (..),
+  translateArticleText,
 
 ) where
 
@@ -71,7 +72,7 @@ runTrans :: String -> ShivaM String
 runTrans = fmap unpack . runCounter . shivaTrans . pack
 
 
----- Translating sets of sentences ----
+---- Translating sets of phrases:  Used for feed listings  ----
 
 -- Some unnecessary complexity here. Very occassionally the translation eats our separator, '|'.
 -- This results in a mismatch in the formed result. In these cases, we use punctuation to separate
@@ -88,29 +89,41 @@ translateSet' svs = do
          in  return $ ShivaResult (length svs == length ens') $
                zipWithDefault SvenskaPair "" svs ens'
 
+translateSet :: [String] -> ShivaM [SvenskaPair]
+translateSet = fmap result . translateSet'
+
+translateSentences :: String -> ShivaM [SvenskaPair]
+translateSentences = translateSet . prepSep
+
+
 
 data TransResult = TransResult
   { theresult :: ShivaResult
   , svTxt :: String
   , enTxt :: String }
 
-translateSet'' :: String -> ShivaM TransResult
-translateSet'' sv = do
+data TransArticle = TransArticle
+  { thetitle :: String
+  , origUrl :: String
+  , imageUrl :: Maybe String
+  , bodyResult :: ShivaResult }
+
+
+translateArticleText :: String -> ShivaM TransResult
+translateArticleText sv = do
   let psv = prep sv
   pen <- runTrans psv
   let ens = divOn '|' pen
       svs = divOn '|' psv
       ens' = sentences $ unwords ens
-      r = if length svs == length ens then ShivaResult True $ zipWith SvenskaPair svs ens
-                                      else ShivaResult (length svs == length ens') $ zipWithDefault SvenskaPair "" svs ens'
+      r = if length svs == length ens
+          then ShivaResult True $ zipWith SvenskaPair svs ens
+          else ShivaResult (length svs == length ens') $ zipWithDefault SvenskaPair "" svs ens'
   return $ TransResult r psv pen
 
 
-translateSet :: [String] -> ShivaM [SvenskaPair]
-translateSet = fmap result . translateSet'
 
-translateSentences :: String -> ShivaM [SvenskaPair]
-translateSentences = translateSet . prepSep
+
 
 ---- Preparation I: Prepare a list of phrases for translation ----
 

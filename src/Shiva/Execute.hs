@@ -82,29 +82,32 @@ retrieveContent FeedItem {..} = do
     Just Source {..} -> return $ contentExtractor txt
     Nothing          -> throwError $ "retrieveContent: unknown sourceName '" ++ sourceName ++ "'."
 
-generateContentResult :: FeedItem -> ShivaM ShivaResult
+
+-- | Take an URL fragment (functioning as an identifier) and text, then translate the text,
+--   save the result to the database, and return it.
+translateSaveBodyText :: String -> String -> ShivaM ShivaResult
+translateSaveBodyText ufrag sv = do
+  TransResult {..} <- translateArticleText sv
+  writeContentData (ufrag,svTxt,enTxt)
+  return theresult
+
+
+generateContentResult :: FeedItem -> ShivaM TransArticle
 generateContentResult fi@FeedItem {..} = do
   mx <- readContentData urlFrag
   case mx of
-    Just (s,e) -> return $ genResult s e
+    Just (s,e) -> return $ TransArticle svTitle urlFull Nothing $ genResult s e
     Nothing    -> do
       art <- retrieveContent fi
-      translateSaveBodyText urlFrag (unpack art)
+      r <- translateSaveBodyText urlFrag (unpack art)
+      return $ TransArticle svTitle urlFull Nothing r
+
 
 -- | Used to generate a web page for an article, identified by a part of a URL. This relies on the
 --   article metadata already being in the database, due to its appearing in an RSS listing page.
-generateResultFromName :: String -> ShivaM ShivaResult
+generateResultFromName :: String -> ShivaM TransArticle
 generateResultFromName urlfrag = do
   md <- readArticleMetadata urlfrag
   case md of
     Just d  -> generateContentResult d
     Nothing -> throwError "Article by that name seems to be missing."
-
-
--- | Take an URL fragment (functioning as an identifier) and text, then translate the text and
---   save the result.
-translateSaveBodyText :: String -> String -> ShivaM ShivaResult
-translateSaveBodyText ufrag sv = do
-  TransResult {..} <- translateSet'' sv
-  writeContentData (ufrag,svTxt,enTxt)
-  return theresult

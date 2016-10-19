@@ -1,11 +1,12 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings,
+             RecordWildCards #-}
 
 module Shiva.HTML (
 
   -- * Pages
   feedPage,
   mainPage,
-  resultPage,
+  articlePage,
   errorPage,
 
   -- * Helpers
@@ -99,8 +100,13 @@ renderFeedItem d = do
 
 ---- Article content pages ----
 
-resultPage :: ShivaResult -> Html ()
-resultPage = bodyTemplate "Shiva Translate" . mapM_ renderPair . result
+articlePage :: TransArticle -> Html ()
+articlePage TransArticle {..} = bodyTemplate "Shiva Translate" $ do
+  h2_ $ fromString thetitle
+  p_ $ do
+    "Translated from "
+    a_ [href_ $ fromString origUrl] "the original."
+  mapM_ renderPair (result bodyResult)
 
 renderPair :: SvenskaPair -> Html ()
 renderPair sp = do
