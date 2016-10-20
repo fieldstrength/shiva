@@ -39,8 +39,8 @@ module Shiva.Config (
 ) where
 
 import Paths_shiva          (getDataFileName)
-import Shiva.Utils          (safeHead)
 
+import Safe                 (headMay)
 import GHC.Generics         (Generic)
 import Data.Yaml.Aeson      (FromJSON, ToJSON, encode, decodeFileEither)
 import Data.List            (isSuffixOf, intercalate)
@@ -127,13 +127,13 @@ appSources = asks sourceList
 srcLookup :: String -> ShivaM (Maybe Source)
 srcLookup name = do
   srcs <- appSources
-  return $ safeHead [ x | x <- srcs, sourceTitle x == name ]
+  return $ headMay [ x | x <- srcs, sourceTitle x == name ]
 
 -- | Look up a source by title code, the name format used in URLs.
 codeLookup :: String -> ShivaM (Maybe Source)
 codeLookup code = do
   srcs <- appSources
-  return $ safeHead [ x | x <- srcs, titleCode x == code ]
+  return $ headMay [ x | x <- srcs, titleCode x == code ]
 
 
 -----

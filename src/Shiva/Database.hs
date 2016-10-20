@@ -15,8 +15,8 @@ module Shiva.Database (
 
 import Shiva.Feeds
 import Shiva.Config
-import Shiva.Utils (safeHead)
 
+import Safe (headMay)
 import Database.PostgreSQL.Simple
 import Control.Monad.IO.Class
 import Control.Monad (void)
@@ -43,7 +43,7 @@ writeAritcleMetadata xs = runDbAction $ \conn -> void $
 readArticleMetadata :: String -> ShivaM (Maybe FeedItem)
 readArticleMetadata name = runDbAction $ \conn -> do
   l <- query conn "SELECT * FROM articleMetaData WHERE urlFrag = ?" (Only name)
-  return . safeHead $ deTuplize <$> l
+  return . headMay $ deTuplize <$> l
 
 readPairs :: Source -> ShivaM [(String,String)]
 readPairs src = runDbAction $ \conn ->
@@ -57,7 +57,7 @@ type ContentData = (String,String,String)
 readContentData :: String -> ShivaM (Maybe (String,String))
 readContentData urlfrag = runDbAction $ \conn -> do
   l <- query conn "SELECT svBody, enBody FROM articleContent WHERE urlFrag = ?" (Only urlfrag)
-  return $ safeHead l
+  return $ headMay l
 
 writeContentData :: ContentData -> ShivaM ()
 writeContentData c = runDbAction $ \conn ->

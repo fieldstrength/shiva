@@ -9,14 +9,14 @@ import Shiva.HTML
 import Shiva.Execute
 import Shiva.Config
 import Shiva.Sources
-import Paths_shiva (getDataFileName)
+import Paths_shiva                   (getDataFileName)
 
 import Web.Scotty
 import Lucid
 import Network.Wai.Middleware.Static
-import Control.Monad.Reader (runReaderT)
-import Control.Monad.Except (runExceptT)
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Reader          (runReaderT)
+import Control.Monad.Except          (runExceptT)
+import Control.Monad.IO.Class        (liftIO)
 
 
 ---- Page generation ----

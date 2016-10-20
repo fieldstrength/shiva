@@ -7,9 +7,10 @@ module Shiva.Extract (
 ) where
 
 import Text.HTML.TagSoup
-import Text.StringLike (StringLike,strConcat)
+import Text.StringLike         (StringLike,strConcat)
 import Text.HTML.TagSoup.Match
-import Prelude hiding (writeFile,readFile)
+import Safe                    (tailSafe)
+import Prelude hiding          (writeFile,readFile)
 
 
 ----- Removing script tags -----
@@ -47,11 +48,6 @@ takeContentTags n (t:ts) | isDivOpen  t = takeContentTags (n+1) ts
 
 -----
 
-
-tail_ :: [a] -> [a]
-tail_ [] = []
-tail_ (_:xs) = xs
-
 divOpenWithId :: StringLike a => a -> Tag a -> Bool
 divOpenWithId i = tagOpenAttrLit "div" ("class",i)
 
@@ -59,7 +55,7 @@ extractDivId :: StringLike a => a -> a -> a
 extractDivId i = innerText
                . takeContentTags 1
                . dropScript
-               . tail_
+               . tailSafe
                . dropWhile (not . divOpenWithId i)
                . parseTags
 
@@ -71,7 +67,7 @@ prepTags = dropScript . parseTags
 extractDivTextWithId :: StringLike a => a -> [Tag a] -> a
 extractDivTextWithId i = innerText
                        . takeContentTags 1
-                       . tail_
+                       . tailSafe
                        . dropWhile (not . divOpenWithId i)
 
 extractDivsWithIds :: StringLike a => [a] -> a -> a

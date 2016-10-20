@@ -15,8 +15,8 @@ module Shiva.HTML (
 ) where
 
 import Shiva.Translation
-import Shiva.Config (Source (..), titleCode)
-import Shiva.Sources (sources)
+import Shiva.Config      (Source (..), titleCode)
+import Shiva.Sources     (sources)
 import Shiva.Feeds
 
 import Lucid.Base

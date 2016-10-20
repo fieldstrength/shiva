@@ -1,8 +1,6 @@
 module Shiva.Utils (
 
   nothingMsg,
-  safeHead,
-  safeLast,
   zipWithDefault,
   separate,
 
@@ -12,16 +10,6 @@ module Shiva.Utils (
 nothingMsg :: String -> Maybe a -> Either String a
 nothingMsg s Nothing  = Left s
 nothingMsg _ (Just x) = Right x
-
-----
-
-
-safeHead :: [a] -> Maybe a
-safeHead (x:_) = Just x
-safeHead _     = Nothing
-
-safeLast :: [a] -> Maybe a
-safeLast = safeHead . reverse
 
 ----
 

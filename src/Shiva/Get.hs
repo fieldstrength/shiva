@@ -1,7 +1,7 @@
 -- | Http GET requests with exceptions handled in the preferred way.
 module Shiva.Get (httpGet) where
 
-import Shiva.Config (IOX)
+import Shiva.Config         (IOX)
 
 import Control.Monad.Except (ExceptT (..))
 import Network.HTTP.Conduit (simpleHttp, HttpException)

@@ -10,9 +10,10 @@ module Shiva.Feeds (
 ) where
 
 import Shiva.Config
-import Shiva.Utils                (nothingMsg, safeHead, safeLast, separate)
+import Shiva.Utils                (nothingMsg, separate)
 import Shiva.Get                  (httpGet)
 
+import Safe                       (headMay, lastMay)
 import Control.Monad              ((<=<))
 import Data.Maybe                 (fromJust, catMaybes)
 import Text.XML.Light.Lexer       (XmlSource)
@@ -39,10 +40,10 @@ timeFormats = [timeFormat1,timeFormat2]
 
 
 parseTimeFormat :: String -> String -> Maybe UTCTime
-parseTimeFormat f = fmap fst . safeHead . readSTime True defaultTimeLocale f
+parseTimeFormat f = fmap fst . headMay . readSTime True defaultTimeLocale f
 
 parseTime :: String -> Maybe UTCTime
-parseTime s = safeHead . catMaybes $ parseTimeFormat <$> timeFormats <*> [s]
+parseTime s = headMay . catMaybes $ parseTimeFormat <$> timeFormats <*> [s]
 
 parseTime' :: String -> UTCTime
 parseTime' = fromJust . parseTime
@@ -95,7 +96,7 @@ mkPrelim srcName RSSItem {..} = FeedItem
   <*> linkMsg (rssItemLink >>= extractURLFrag)
   <*> linkMsg rssItemLink
     where linkMsg = nothingMsg "Link invalid or missing"
-          extractURLFrag = safeLast . separate '/'
+          extractURLFrag = lastMay . separate '/'
 
 
 loadItems :: String -> String -> IOX [Err FeedItem]

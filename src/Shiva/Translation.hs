@@ -19,15 +19,17 @@ module Shiva.Translation (
 
 import Shiva.Config
 import Shiva.Database
-import Shiva.Utils (safeLast, zipWithDefault)
+import Shiva.Utils               (zipWithDefault)
 
-import Language.Bing (translate, BingLanguage (..))
-import Data.Text (Text,pack,unpack)
+import Safe                      (lastMay)
+import Language.Bing             (translate, BingLanguage (..))
+import Data.Text                 (Text,pack,unpack)
 import qualified Data.Text as T
 import Control.Monad.State
 import Control.Monad.Error.Class (throwError)
+import Data.List                 (intercalate)
 import qualified Data.ByteString.Char8 as BSC
-import Data.List (intercalate)
+
 
 
 data SvenskaPair = SvenskaPair
@@ -170,7 +172,7 @@ sentences :: String -> [String]
 sentences = map unwords . sepOn punctuated . words
 
 punctuated :: String -> Bool
-punctuated = mayTest (`elem` punctuation) . safeLast
+punctuated = mayTest (`elem` punctuation) . lastMay
   where mayTest p (Just x) = p x
         mayTest _ Nothing  = False
 

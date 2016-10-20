@@ -13,16 +13,16 @@ import Shiva.Config
 import Shiva.Database
 import Shiva.Translation
 import Shiva.HTML
-import Shiva.Get (httpGet)
+import Shiva.Get                 (httpGet)
 
-import Data.Bifunctor (first, second)
-import Prelude hiding (lookup)
-import Data.List (sortBy)
-import Data.Map (Map,lookup,fromList)
+import Data.Bifunctor            (first, second)
+import Prelude hiding            (lookup)
+import Data.List                 (sortBy)
+import Data.Map                  (Map,lookup,fromList)
 import Lucid
 import Control.Monad.Error.Class (throwError, catchError)
-import Control.Monad.State (lift)
-import Data.Text (Text,unpack)
+import Control.Monad.State       (lift)
+import Data.Text                 (Text,unpack)
 
 
 readMetadataMap :: Source -> ShivaM (Map String String)
