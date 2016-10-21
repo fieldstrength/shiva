@@ -7,13 +7,18 @@ import Control.Monad.Except (ExceptT (..))
 import Network.HTTP.Conduit (simpleHttp, HttpException)
 import Control.Exception    (catch)
 import Data.Text            (Text)
-import Data.Text.Encoding   (decodeUtf8)
+import Data.Text.Encoding   (decodeUtf8')
 import Data.ByteString.Lazy (toStrict)
+import Data.ByteString      (ByteString)
+import Data.Bifunctor       (first)
 
 reportHttpException :: HttpException -> IO (Either String a)
 reportHttpException = return . Left . show
 
+safeDecode :: ByteString -> Either String Text
+safeDecode = first show . decodeUtf8'
+
 httpGet :: String -> IOX Text
 httpGet url = ExceptT $ do
-  bs <- fmap Right (simpleHttp url) `catch` reportHttpException
-  return $ decodeUtf8 . toStrict <$> bs
+  mbs <- fmap Right (simpleHttp url) `catch` reportHttpException
+  return $ safeDecode . toStrict =<< mbs
