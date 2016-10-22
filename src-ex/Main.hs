@@ -11,7 +11,7 @@ import Control.Concurrent  (forkIO, threadDelay)
 
 launch :: IO ()
 launch = do
-  threadDelay $ 5*10^4  -- 50 ms
+  threadDelay $ 5*10^4  -- 50 ms, exact number not important
   callCommand "open 'http://localhost:7777'"
 
 main :: IO ()

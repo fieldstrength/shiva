@@ -78,7 +78,8 @@ connectInfo Config {..} = defaultConnectInfo { connectUser = dbUser, connectData
 data Source = Source
   { sourceTitle :: String
   , feedUrl :: String
-  , contentExtractor :: Text -> Text }
+  , contentExtractor :: Text -> Text
+  , imageExtractor :: Text -> Maybe Text }
 
 
 -- | The representation of the source title used in the corresponding URL (lowercase, dash-separated).

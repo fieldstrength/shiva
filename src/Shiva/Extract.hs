@@ -2,15 +2,20 @@
 
 -- | For extracting article content from HTML.
 module Shiva.Extract (
-  extractDivId,
-  extractDivsWithIds
+  extractDivClass,
+  extractDivText,
+  extractImgUrl,
+  extractImgUrl_noParams,
 ) where
 
 import Text.HTML.TagSoup
-import Text.StringLike         (StringLike,strConcat)
+import Text.StringLike         (StringLike, strConcat)
 import Text.HTML.TagSoup.Match
-import Safe                    (tailSafe)
-import Prelude hiding          (writeFile,readFile)
+import Safe                    (tailSafe, headMay)
+import Data.Text               (Text)
+import Data.Sequences          (takeWhile)
+import Prelude hiding          (writeFile, readFile, takeWhile)
+
 
 
 ----- Removing script tags -----
@@ -33,10 +38,10 @@ sep q l = runSep q ([],l)
 
 
 isDivOpen :: StringLike a => Tag a -> Bool
-isDivOpen = tagOpen (=="div") (const True)
+isDivOpen = tagOpenLit "div" (const True)
 
 isDivClose :: StringLike a => Tag a -> Bool
-isDivClose = tagClose (=="div")
+isDivClose = tagCloseLit "div"
 
 takeContentTags :: StringLike a => Int -> [Tag a] -> [Tag a]
 takeContentTags 0 _      = []
@@ -48,31 +53,48 @@ takeContentTags n (t:ts) | isDivOpen  t = takeContentTags (n+1) ts
 
 -----
 
-divOpenWithId :: StringLike a => a -> Tag a -> Bool
-divOpenWithId i = tagOpenAttrLit "div" ("class",i)
+divOpenWithClass :: StringLike a => a -> Tag a -> Bool
+divOpenWithClass i = tagOpenAttrLit "div" ("class",i)
 
-extractDivId :: StringLike a => a -> a -> a
-extractDivId i = innerText
-               . takeContentTags 1
-               . dropScript
-               . tailSafe
-               . dropWhile (not . divOpenWithId i)
-               . parseTags
+extractDivClass :: StringLike a => a -> a -> a
+extractDivClass i = innerText
+                  . takeContentTags 1
+                  . dropScript
+                  . tailSafe
+                  . dropWhile (not . divOpenWithClass i)
+                  . parseTags
 
 -----
 
 prepTags :: StringLike a => a -> [Tag a]
 prepTags = dropScript . parseTags
 
-extractDivTextWithId :: StringLike a => a -> [Tag a] -> a
-extractDivTextWithId i = innerText
-                       . takeContentTags 1
-                       . tailSafe
-                       . dropWhile (not . divOpenWithId i)
+extractDivTextWithClass :: StringLike a => a -> [Tag a] -> a
+extractDivTextWithClass i = innerText
+                          . takeContentTags 1
+                          . tailSafe
+                          . dropWhile (not . divOpenWithClass i)
 
-extractDivsWithIds :: StringLike a => [a] -> a -> a
-extractDivsWithIds ids str = strConcat $ extractDivTextWithId <$> ids <*> [prepTags str]
+extractDivText :: StringLike a => [a] -> a -> a
+extractDivText ids str = strConcat $ extractDivTextWithClass <$> ids <*> [prepTags str]
 
+
+-----
+
+imgWithClass :: StringLike a => a -> Tag a -> Bool
+imgWithClass c = tagOpenAttrLit "img" ("class",c)
+
+extractImgUrl :: Text -> Text -> Maybe Text
+extractImgUrl c = headMay
+                . map (fromAttrib "src")
+                . filter (imgWithClass c)
+                . prepTags
+
+dropParams :: Text -> Text
+dropParams = takeWhile (/= '?')
+
+extractImgUrl_noParams :: Text -> Text -> Maybe Text
+extractImgUrl_noParams c = fmap dropParams . extractImgUrl c
 
 
 
