@@ -15,7 +15,7 @@ extractDN :: Text -> Text
 extractDN = extractDivText ["article__body-grid-item article__lead", "article__body-content"]
 
 extractDNImage :: Text -> Maybe Text
-extractDNImage = extractImgUrl_noParams "image-box__img"
+extractDNImage = extractImgUrl_noParams "image-box__img image-box__img--fallback"
 
 latestNews, economy, stockholm :: Source
 latestNews = Source "Latest News" "http://www.dn.se/rss/senaste-nytt/" extractDN extractDNImage

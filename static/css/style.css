@@ -67,6 +67,9 @@ a:hover {
   padding: 10px;
 }
 
+img.articleImg {
+  max-width: 800px;
+}
 
 h1 {
     color: #6d456a;
@@ -78,14 +81,14 @@ h1 {
 
 h2 {
     font-size: 20px;
-    font-family: Banshee;
+    font-family: SansationBold;
     padding: 15px 0px 5px 0px;
     border-bottom: 1px solid rgb(64, 39, 58);
 }
 
 h3 {
     font-size: 14px;
-    font-family: Banshee;
+    font-family: SansationBold;
     padding: 5px 0px 5px 0px;
     border-bottom: 1px solid rgb(64, 39, 58);
 }

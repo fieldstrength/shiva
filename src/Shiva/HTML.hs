@@ -21,8 +21,9 @@ import Shiva.Feeds
 
 import Lucid.Base
 import Lucid.Html5
-import Data.String
 import Data.Monoid ((<>))
+import Data.Maybe (isJust,fromJust)
+import Control.Monad (when)
 
 
 ---- Html Infra ----
@@ -38,7 +39,6 @@ bodyTemplate title bod = doctypehtml_ $ do
         , type_ "text/css" ]
     body_ $ do
       h1_ (toHtml title)
-      br_ []
       bod
 
 
@@ -107,6 +107,10 @@ articlePage TransArticle {..} = bodyTemplate "Shiva Translate" $ do
   p_ $ do
     "Translated from "
     a_ [href_ origUrl] "the original."
+  when (isJust imageUrl) $ do
+    img_ [src_ $ fromJust imageUrl, class_ "articleImg"]
+    br_ []
+    br_ []
   mapM_ renderPair (result bodyResult)
 
 renderPair :: SvenskaPair -> Html ()

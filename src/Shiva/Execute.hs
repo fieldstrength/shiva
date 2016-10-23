@@ -74,15 +74,6 @@ genResult sv en =
       ps  = zipWithDefault SvenskaPair empty svs ens
   in ShivaResult (length svs == length ens) ps
 
-retrieveContent :: FeedItem -> ShivaM Text
-retrieveContent FeedItem {..} = do
-  txt <- lift $ httpGet urlFull
-  msrc <- srcLookup sourceName
-  case msrc of
-    Just Source {..} -> return $ contentExtractor txt
-    Nothing          -> throwError $ "retrieveContent: unknown sourceName '"
-                          ++ unpack sourceName ++ "'."
-
 
 -- | Take an URL fragment (functioning as an identifier) and text, then translate the text,
 --   save the result to the database, and return it.
@@ -92,16 +83,25 @@ translateSaveBodyText ufrag sv = do
   writeContentData (ufrag,svTxt,enTxt)
   return theresult
 
+retrieveAndExtract :: FeedItem -> ShivaM TransArticle
+retrieveAndExtract FeedItem {..} = do
+  txt <- lift $ httpGet urlFull
+  msrc <- srcLookup sourceName
+  case msrc of
+    Nothing -> throwError $ "retrieveContent: unknown sourceName '"++ unpack sourceName ++ "'."
+    Just Source {..} -> do
+      let contentTxt = contentExtractor txt
+      let img = imageExtractor txt
+      r <- translateSaveBodyText urlFrag contentTxt
+      return $ TransArticle svTitle urlFull img r
+
 
 generateContentResult :: FeedItem -> ShivaM TransArticle
 generateContentResult fi@FeedItem {..} = do
   mx <- readContentData urlFrag
   case mx of
     Just (s,e) -> return $ TransArticle svTitle urlFull Nothing $ genResult s e
-    Nothing    -> do
-      art <- retrieveContent fi
-      r <- translateSaveBodyText urlFrag art
-      return $ TransArticle svTitle urlFull Nothing r
+    Nothing    -> retrieveAndExtract fi
 
 
 -- | Used to generate a web page for an article, identified by a part of a URL. This relies on the
