@@ -43,7 +43,7 @@ import Paths_shiva          (getDataFileName)
 import Safe                 (headMay)
 import GHC.Generics         (Generic)
 import Data.Yaml.Aeson      (FromJSON, ToJSON, encode, decodeFileEither)
-import Data.List            (isSuffixOf, intercalate)
+import Data.List            (isSuffixOf)
 import System.Environment   (lookupEnv)
 import Data.ByteString      (writeFile)
 import Control.Monad.Except
@@ -52,10 +52,11 @@ import Control.Monad.State
 import Data.Bifunctor       (first)
 import Data.Maybe           (fromMaybe)
 import Control.Applicative  ((<|>))
-import Prelude hiding       (writeFile,lookup)
-import Data.Text            (Text)
+import Prelude hiding       (writeFile,lookup,words)
+import Data.Text            (Text, words, intercalate)
 import Data.Char            (toLower)
 import Database.PostgreSQL.Simple
+import Data.MonoTraversable (omap)
 
 
 -- | Application data saved in a local config file. Information for Microsoft Translator API and
@@ -76,15 +77,15 @@ connectInfo Config {..} = defaultConnectInfo { connectUser = dbUser, connectData
 
 -- | Data related to a source of news articles accessed via RSS.
 data Source = Source
-  { sourceTitle :: String
+  { sourceTitle :: Text
   , feedUrl :: String
   , contentExtractor :: Text -> Text
   , imageExtractor :: Text -> Maybe Text }
 
 
 -- | The representation of the source title used in the corresponding URL (lowercase, dash-separated).
-titleCode :: Source -> String
-titleCode = intercalate "-" . words . map toLower . sourceTitle
+titleCode :: Source -> Text
+titleCode = intercalate "-" . words . omap toLower . sourceTitle
 
 -- | All data needed
 data ShivaData = ShivaData
@@ -125,13 +126,13 @@ appSources :: ShivaM [Source]
 appSources = asks sourceList
 
 -- | Look up a source by name.
-srcLookup :: String -> ShivaM (Maybe Source)
+srcLookup :: Text -> ShivaM (Maybe Source)
 srcLookup name = do
   srcs <- appSources
   return $ headMay [ x | x <- srcs, sourceTitle x == name ]
 
 -- | Look up a source by title code, the name format used in URLs.
-codeLookup :: String -> ShivaM (Maybe Source)
+codeLookup :: Text -> ShivaM (Maybe Source)
 codeLookup code = do
   srcs <- appSources
   return $ headMay [ x | x <- srcs, titleCode x == code ]

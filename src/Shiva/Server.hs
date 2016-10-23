@@ -14,6 +14,7 @@ import Paths_shiva                   (getDataFileName)
 import Web.Scotty
 import Lucid
 import Network.Wai.Middleware.Static
+import Data.Text                     (Text)
 import Control.Monad.Reader          (runReaderT)
 import Control.Monad.Except          (runExceptT)
 import Control.Monad.IO.Class        (liftIO)
@@ -30,10 +31,10 @@ runHtmlGen d f =
   . fmap f
 
 
-generateFeedPage :: ShivaData -> String -> IO (Html ())
+generateFeedPage :: ShivaData -> Text -> IO (Html ())
 generateFeedPage d t = runHtmlGen d feedPage (loadFeedByTitleCode t)
 
-generateContentPage :: ShivaData -> String -> IO (Html ())
+generateContentPage :: ShivaData -> Text -> IO (Html ())
 generateContentPage d t = runHtmlGen d articlePage (generateResultFromName t)
 
 

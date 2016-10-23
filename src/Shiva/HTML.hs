@@ -22,6 +22,7 @@ import Shiva.Feeds
 import Lucid.Base
 import Lucid.Html5
 import Data.String
+import Data.Monoid ((<>))
 
 
 ---- Html Infra ----
@@ -65,7 +66,7 @@ mainPage = bodyTemplate "Shiva Translation" $ do
 
 sourceItem :: Source -> Html ()
 sourceItem i = li_ $
-  a_ [href_ . fromString $ "sources/" ++ titleCode i] . toHtml $ sourceTitle i
+  a_ [href_ $ "sources/" <> titleCode i] . toHtml $ sourceTitle i
 
 
 ---- Feed listing pages ----
@@ -90,10 +91,10 @@ renderFeedItem d = do
       td_ $ toHtml $ showTime (itemTime d)
       td_ [makeAttribute "align" "right"] $ do
         "Original content: "
-        a_ [href_ $ fromString $ urlFull d] "Link"
+        a_ [href_ $ urlFull d] "Link"
   div_ [class_ "svenska"] $
-    a_ [href_ $ fromString $ "/content/dn/" ++ urlFrag d] (fromString $ svTitle d)
-  div_ [class_ "engelska"] (fromString $ enTitle d)
+    a_ [href_ $ "/content/dn/" <> urlFrag d] (toHtml $ svTitle d)
+  div_ [class_ "engelska"] (toHtml $ enTitle d)
   br_ []
   br_ []
 
@@ -102,15 +103,15 @@ renderFeedItem d = do
 
 articlePage :: TransArticle -> Html ()
 articlePage TransArticle {..} = bodyTemplate "Shiva Translate" $ do
-  h2_ $ fromString thetitle
+  h2_ $ toHtml thetitle
   p_ $ do
     "Translated from "
-    a_ [href_ $ fromString origUrl] "the original."
+    a_ [href_ origUrl] "the original."
   mapM_ renderPair (result bodyResult)
 
 renderPair :: SvenskaPair -> Html ()
 renderPair sp = do
-  div_ [class_ "svenska"]  (fromString $ swedish sp)
-  div_ [class_ "engelska"] (fromString $ english sp)
+  div_ [class_ "svenska"]  (toHtml $ swedish sp)
+  div_ [class_ "engelska"] (toHtml $ english sp)
   br_ []
   br_ []

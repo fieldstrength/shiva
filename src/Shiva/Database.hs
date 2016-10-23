@@ -1,5 +1,4 @@
-{-# LANGUAGE OverloadedStrings,
-             RecordWildCards    #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Shiva.Database (
   readArticleMetadata,
@@ -16,6 +15,7 @@ module Shiva.Database (
 import Shiva.Feeds
 import Shiva.Config
 
+import Data.Text (Text,pack,unpack)
 import Safe (headMay)
 import Database.PostgreSQL.Simple
 import Control.Monad.IO.Class
@@ -27,11 +27,11 @@ runDbAction :: (Connection -> IO a) -> ShivaM a
 runDbAction fio = liftIO . fio =<< appConnection
 
 
-tuplize :: FeedItem -> (String,String,String,String,String,String)
-tuplize p = (showTime (itemTime p), sourceName p, svTitle p, enTitle p, urlFrag p, urlFull p)
+tuplize :: FeedItem -> (Text,Text,Text,Text,Text,Text)
+tuplize p = (pack (showTime $ itemTime p), sourceName p, svTitle p, enTitle p, urlFrag p, urlFull p)
 
-deTuplize :: (String,String,String,String,String,String) -> FeedItem
-deTuplize (t,src,s,e,u,v) = FeedItem (parseTime' t) src s e u v
+deTuplize :: (Text,Text,Text,Text,Text,Text) -> FeedItem
+deTuplize (t,src,s,e,u,v) = FeedItem (unsafeParseTime $ unpack t) src s e u v
 
 
 writeAritcleMetadata :: [FeedItem] -> ShivaM ()
@@ -40,21 +40,21 @@ writeAritcleMetadata xs = runDbAction $ \conn -> void $
   "INSERT INTO articleMetaData (date, category, svTitle, enTitle, urlFrag, urlFull) VALUES (?,?,?,?,?,?)" $
   tuplize <$> xs
 
-readArticleMetadata :: String -> ShivaM (Maybe FeedItem)
+readArticleMetadata :: Text -> ShivaM (Maybe FeedItem)
 readArticleMetadata name = runDbAction $ \conn -> do
   l <- query conn "SELECT * FROM articleMetaData WHERE urlFrag = ?" (Only name)
   return . headMay $ deTuplize <$> l
 
-readPairs :: Source -> ShivaM [(String,String)]
+readPairs :: Source -> ShivaM [(Text,Text)]
 readPairs src = runDbAction $ \conn ->
   query conn "SELECT svTitle, enTitle FROM articleMetaData WHERE category = ?" (Only $ sourceTitle src)
 
 
 ----- Article Content
 
-type ContentData = (String,String,String)
+type ContentData = (Text,Text,Text)
 
-readContentData :: String -> ShivaM (Maybe (String,String))
+readContentData :: Text -> ShivaM (Maybe (Text,Text))
 readContentData urlfrag = runDbAction $ \conn -> do
   l <- query conn "SELECT svBody, enBody FROM articleContent WHERE urlFrag = ?" (Only urlfrag)
   return $ headMay l

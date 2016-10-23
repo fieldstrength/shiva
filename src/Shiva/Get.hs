@@ -6,7 +6,7 @@ import Shiva.Config         (IOX)
 import Control.Monad.Except (ExceptT (..))
 import Network.HTTP.Conduit (simpleHttp, HttpException)
 import Control.Exception    (catch)
-import Data.Text            (Text)
+import Data.Text            (Text, unpack)
 import Data.Text.Encoding   (decodeUtf8')
 import Data.ByteString.Lazy (toStrict)
 import Data.ByteString      (ByteString)
@@ -18,7 +18,7 @@ reportHttpException = return . Left . show
 safeDecode :: ByteString -> Either String Text
 safeDecode = first show . decodeUtf8'
 
-httpGet :: String -> IOX Text
+httpGet :: Text -> IOX Text
 httpGet url = ExceptT $ do
-  mbs <- fmap Right (simpleHttp url) `catch` reportHttpException
+  mbs <- fmap Right (simpleHttp $ unpack url) `catch` reportHttpException
   return $ safeDecode . toStrict =<< mbs

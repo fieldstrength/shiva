@@ -1,4 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards,
+             OverloadedStrings,
+             TypeApplications #-}
 
 module Shiva.Translation (
   SvenskaPair (..),
@@ -8,7 +10,7 @@ module Shiva.Translation (
   translateSentences,
   prep,
   prepSep,
-  divOn,
+  barDiv,
   zipWithDefault,
 
   TransResult (..),
@@ -20,21 +22,22 @@ module Shiva.Translation (
 import Shiva.Config
 import Shiva.Database
 import Shiva.Utils               (zipWithDefault)
+import Data.MonoTraversable      (omap)
 
 import Safe                      (lastMay)
 import Language.Bing             (translate, BingLanguage (..))
-import Data.Text                 (Text,pack,unpack)
+import Data.Text                 (Text, split)
 import qualified Data.Text as T
 import Control.Monad.State
 import Control.Monad.Error.Class (throwError)
-import Data.List                 (intercalate)
+import Data.List                 (intersperse)
 import qualified Data.ByteString.Char8 as BSC
 
 
 
 data SvenskaPair = SvenskaPair
-  { swedish :: String
-  , english :: String }
+  { swedish :: Text
+  , english :: Text }
 
 data ShivaResult = ShivaResult
   { success :: Bool
@@ -70,8 +73,8 @@ shivaTrans txt = do
   modify (+n)
   lift $ trans txt
 
-runTrans :: String -> ShivaM String
-runTrans = fmap unpack . runCounter . shivaTrans . pack
+runTrans :: Text -> ShivaM Text
+runTrans = runCounter . shivaTrans
 
 
 ---- Translating sets of phrases:  Used for feed listings  ----
@@ -80,50 +83,48 @@ runTrans = fmap unpack . runCounter . shivaTrans . pack
 -- This results in a mismatch in the formed result. In these cases, we use punctuation to separate
 -- sentences. While this may not be 100% perfect either, the rate of coincidence of these two
 -- potential problems should be very small.
-translateSet' :: [String] -> ShivaM ShivaResult
+translateSet' :: [Text] -> ShivaM ShivaResult
 translateSet' svs = do
   let pstr = prepSet svs
   en <- runTrans pstr
-  let ens = divOn '|' en
+  let ens = barDiv en
   if length svs == length ens
     then return $ ShivaResult True $ zipWith SvenskaPair svs ens
-    else let ens' = sentences $ unwords ens
+    else let ens' = sentences $ T.unwords ens
          in  return $ ShivaResult (length svs == length ens') $
                zipWithDefault SvenskaPair "" svs ens'
 
-translateSet :: [String] -> ShivaM [SvenskaPair]
+translateSet :: [Text] -> ShivaM [SvenskaPair]
 translateSet = fmap result . translateSet'
 
-translateSentences :: String -> ShivaM [SvenskaPair]
+translateSentences :: Text -> ShivaM [SvenskaPair]
 translateSentences = translateSet . prepSep
 
 
 
 data TransResult = TransResult
   { theresult :: ShivaResult
-  , svTxt :: String
-  , enTxt :: String }
+  , svTxt :: Text
+  , enTxt :: Text }
 
 data TransArticle = TransArticle
-  { thetitle :: String
-  , origUrl :: String
-  , imageUrl :: Maybe String
+  { thetitle :: Text
+  , origUrl :: Text
+  , imageUrl :: Maybe Text
   , bodyResult :: ShivaResult }
 
 
-translateArticleText :: String -> ShivaM TransResult
+translateArticleText :: Text -> ShivaM TransResult
 translateArticleText sv = do
   let psv = prep sv
   pen <- runTrans psv
-  let ens = divOn '|' pen
-      svs = divOn '|' psv
-      ens' = sentences $ unwords ens
+  let ens = barDiv pen
+      svs = barDiv psv
+      ens' = sentences $ T.unwords ens
       r = if length svs == length ens
           then ShivaResult True $ zipWith SvenskaPair svs ens
           else ShivaResult (length svs == length ens') $ zipWithDefault SvenskaPair "" svs ens'
   return $ TransResult r psv pen
-
-
 
 
 
@@ -132,48 +133,45 @@ translateArticleText sv = do
 
 ---- Intersperse '|' between phrases ----
 
-prepSet :: [String] -> String
-prepSet = intercalate " | " . map (replace '|' '~')
+prepSet :: [Text] -> Text
+prepSet = mconcat . intersperse " | " . map (omap $ replaceElem '|' '~')
 
-replace :: Eq a => a -> a -> [a] -> [a]
-replace x y = map $ \i -> if i == x then y else i
+replace :: Char -> Char -> Text -> Text
+replace x y = omap $ replaceElem x y
 
+replaceElem :: Eq a => a -> a -> a -> a
+replaceElem x y z = if z == x then y else z
 
 ---- Inverse of prepartion: Separate on every occurrence of '|' ----
 
--- Separate list on each appearance of the special element.
-divOn :: Eq a => a -> [a] -> [[a]]
-divOn x l = case sep' x l of
-  (xs,[]) -> [xs]
-  (xs,ys) -> xs : divOn x ys
+barDiv :: Text -> [Text]
+barDiv = split (=='|')
 
--- The list of elements occuring before the (first) designated element, and those occurring after.
-sep' :: Eq a => a -> [a] -> ([a],[a])
-sep' x l = runSep x ([],l)
-  where runSep _ (xs,[])   = (reverse xs,[])
-        runSep y (xs,z:zs) = if y == z then (reverse xs,zs) else runSep y (z:xs,zs)
+barJoin :: [Text] -> Text
+barJoin = mconcat . intersperse " | "
 
 
 ---- Preparation II: Prepare a body of text, separating into sentences ----
 
 -- | Remove any current instances of the '|' character. Then separate into sentences and
 --   delineate them with |.
-prep :: String -> String
-prep = intercalate " | " . sentences . replace '|' '~'
+prepSep :: Text -> [Text]
+prepSep = sentences . replace '|' '~'
 
 -- | Remove any current instances of the '|' character. Then separate into sentences and
 --   delineate them with |.
-prepSep :: String -> [String]
-prepSep = sentences . replace '|' '~'
+prep :: Text -> Text
+prep = barJoin . prepSep
 
 ---- Separating by sentence ----
 
-sentences :: String -> [String]
-sentences = map unwords . sepOn punctuated . words
+sentences :: Text -> [Text]
+sentences = map T.unwords . sepOn punctuated . T.words
 
-punctuated :: String -> Bool
-punctuated = mayTest (`elem` punctuation) . lastMay
-  where mayTest p (Just x) = p x
+punctuated :: Text -> Bool
+punctuated = mayTest (flip (elem @[]) punctuation) . lastMay . T.unpack
+  where mayTest :: (Char -> Bool) -> Maybe Char -> Bool
+        mayTest p (Just x) = p x
         mayTest _ Nothing  = False
 
         punctuation = ".!?"
