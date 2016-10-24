@@ -7,6 +7,12 @@ Invoked without command line options, the executable starts the web server and o
 
 The main page links to a list of RSS feeds corresponding to different news categories. When any item in a feed listing is clicked on, it opens a page displaying the article text, separated by sentence, together with a div containing the native-language translation but whose text is only visible when the cursor hovers over it.
 
+### Preview
+
+An article page will look something like this.
+
+![Screenshot](screenshot.jpg)
+
 ### Usage
 
 ##### Installation
