@@ -2,7 +2,7 @@
 
 module Shiva.Server (
   runServer,
-  test
+  testServer
 ) where
 
 import Shiva.HTML
@@ -71,8 +71,8 @@ runServer srcs = do
 
 -- | Run the server (from within ghci). Uses the repo's 'static' path instead of one
 --   set up by Stack or Cabal. Useful for testing out changes in styling or other static aspects.
-test :: IO ()
-test = runIOX (loadEverything sources) >>= server "static"
+testServer :: IO ()
+testServer = runIOX (loadEverything sources) >>= server "static"
 
 
 

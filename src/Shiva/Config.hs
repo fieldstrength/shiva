@@ -193,13 +193,13 @@ enterConfig = do
   let conf = Config cid csecret dbname dbuser
   return conf
 
-yn :: IO Bool
-yn = do
+yesOrNo :: IO Bool
+yesOrNo = do
   s <- getLine
   case s of
     'y':_ -> return True
     'n':_ -> return False
-    _     -> putStrLn "Please answer yes or no (y/n): " *> yn
+    _     -> putStrLn "Please answer yes or no (y/n): " *> yesOrNo
 
 -- | Command line script to enter and save app configuration data.
 setup :: IO ()
@@ -211,7 +211,7 @@ setup = do
     Just h  -> do
       putStrLn "Save (hidden) config file in home directory?"
       putStrLn "This will make it stable across package reinstalls. Enter (y/n): "
-      b <- yn
+      b <- yesOrNo
       path <- if b then return (h ++ ".shiva.yaml")
                    else configPath
       writeFile path (encode conf)
