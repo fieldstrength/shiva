@@ -24,7 +24,7 @@ import Control.Monad.Error.Class  (throwError)
 import Data.Time.Format           (readSTime, formatTime)
 import Data.Time                  (UTCTime, defaultTimeLocale)
 import Data.Either                (rights, lefts)
-import Data.Text                  (Text, pack, unpack)
+import Data.Text                  (Text, pack)
 
 -- | RSS date format used by DN News feed.
 --   for reference:
