@@ -8,8 +8,6 @@ module Shiva.Database (
   readContentData,
   writeContentData,
 
-  readCharCount,
-  writeCharCount,
 ) where
 
 import Shiva.Feeds
@@ -37,17 +35,17 @@ deTuplize (t,src,s,e,u,v) = FeedItem (unsafeParseTime $ unpack t) src s e u v
 writeAritcleMetadata :: [FeedItem] -> ShivaM ()
 writeAritcleMetadata xs = runDbAction $ \conn -> void $
   executeMany conn
-  "INSERT INTO articleMetaData (date, category, svTitle, enTitle, urlFrag, urlFull) VALUES (?,?,?,?,?,?)" $
+  "INSERT INTO article_metadata (date, category, sv_title, en_title, urlFrag, urlFull) VALUES (?,?,?,?,?,?)" $
   tuplize <$> xs
 
 readArticleMetadata :: Text -> ShivaM (Maybe FeedItem)
 readArticleMetadata name = runDbAction $ \conn -> do
-  l <- query conn "SELECT * FROM articleMetaData WHERE urlFrag = ?" (Only name)
+  l <- query conn "SELECT * FROM article_metadata WHERE urlFrag = ?" (Only name)
   return . headMay $ deTuplize <$> l
 
 readPairs :: Source -> ShivaM [(Text,Text)]
 readPairs src = runDbAction $ \conn ->
-  query conn "SELECT svTitle, enTitle FROM articleMetaData WHERE category = ?" (Only $ sourceTitle src)
+  query conn "SELECT sv_title, en_title FROM article_metadata WHERE category = ?" (Only $ sourceTitle src)
 
 
 ----- Article Content
@@ -56,19 +54,9 @@ type ContentData = (Text,Text,Text)
 
 readContentData :: Text -> ShivaM (Maybe (Text,Text))
 readContentData urlfrag = runDbAction $ \conn -> do
-  l <- query conn "SELECT svBody, enBody FROM articleContent WHERE urlFrag = ?" (Only urlfrag)
+  l <- query conn "SELECT sv_body, en_body FROM article_content WHERE urlFrag = ?" (Only urlfrag)
   return $ headMay l
 
 writeContentData :: ContentData -> ShivaM ()
 writeContentData c = runDbAction $ \conn ->
-  void $ execute conn "INSERT INTO articleContent (urlFrag, svBody, enBody) VALUES (?,?,?)" c
-
-
-readCharCount :: ShivaM Int
-readCharCount = runDbAction $ \conn -> do
-  [Only n] <- query_ conn "SELECT * FROM charCount"
-  return n
-
-writeCharCount :: Int -> ShivaM ()
-writeCharCount n = runDbAction $ \conn ->
-  void $ execute conn "UPDATE charCount SET numChars = ?" (Only n)
+  void $ execute conn "INSERT INTO article_content (urlFrag, sv_body, en_body) VALUES (?,?,?)" c

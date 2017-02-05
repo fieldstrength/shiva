@@ -1,5 +1,5 @@
 name:                shiva
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            Practice a foreign language by reading news articles.
 description:         Practice a foreign language by reading news articles, with any needed
                      translations instantly available via hovering.

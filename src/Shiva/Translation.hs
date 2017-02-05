@@ -20,7 +20,7 @@ module Shiva.Translation (
 ) where
 
 import Shiva.Config
-import Shiva.Database
+-- import Shiva.Database
 import Shiva.Utils               (zipWithDefault)
 import Data.MonoTraversable      (omap)
 
@@ -56,15 +56,10 @@ trans sv = do
 
 ---- Translation with running character count ----
 
-bumpCount :: Int -> ShivaM ()
-bumpCount n = do
-  s <- readCharCount
-  writeCharCount (s+n)
-
 runCounter :: CounterM a -> ShivaM a
 runCounter cm = do
   (x,s) <- runStateT cm 0
-  bumpCount s
+  -- save translation event record in DB here
   return x
 
 shivaTrans :: Text -> CounterM Text
