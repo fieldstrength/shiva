@@ -10,14 +10,14 @@ module Shiva.Database (
 
 ) where
 
-import Shiva.Feeds
 import Shiva.Config
+import Shiva.Feeds
 
-import Data.Text (Text,pack,unpack)
-import Safe (headMay)
-import Database.PostgreSQL.Simple
+import Control.Monad              (void)
 import Control.Monad.IO.Class
-import Control.Monad (void)
+import Data.Text                  (Text, pack, unpack)
+import Database.PostgreSQL.Simple
+import Safe                       (headMay)
 
 
 

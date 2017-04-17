@@ -1,13 +1,13 @@
 -- | Http GET requests with exceptions handled in the preferred way.
 module Shiva.Get (httpGet) where
 
-import           Shiva.Config         (ShivaException (..))
+import Shiva.Config         (ShivaException (..))
 
-import           Control.Monad.Catch  (throwM, try)
-import           Data.ByteString.Lazy (toStrict)
-import           Data.Text            (Text, unpack)
-import           Data.Text.Encoding   (decodeUtf8')
-import           Network.HTTP.Conduit (simpleHttp)
+import Control.Monad.Catch  (throwM, try)
+import Data.ByteString.Lazy (toStrict)
+import Data.Text            (Text, unpack)
+import Data.Text.Encoding   (decodeUtf8')
+import Network.HTTP.Conduit (simpleHttp)
 
 httpGet :: Text -> IO Text
 httpGet url = do

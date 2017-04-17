@@ -1,7 +1,7 @@
-{-# LANGUAGE DeriveGeneric,
-             OverloadedStrings,
-             RecordWildCards,
-             GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
 
 -- | The configuration data type and IO operations to set up, save and load it.
 --   Also aliased for the different layers of the monad transformer stack we employ.
@@ -39,39 +39,39 @@ module Shiva.Config (
 
 ) where
 
-import Paths_shiva          (getDataFileName)
+import Paths_shiva                (getDataFileName)
 
-import Safe                 (headMay)
-import GHC.Generics         (Generic)
-import Data.Yaml.Aeson      (FromJSON, ToJSON, encode, decodeFileEither)
-import Data.List            (isSuffixOf)
-import System.Environment   (lookupEnv)
-import System.Process       (callCommand)
-import Data.ByteString      (writeFile)
+import Control.Applicative        ((<|>))
+import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State
-import Control.Monad.Catch
-import Data.Bifunctor       (first)
-import Data.Maybe           (fromMaybe)
-import Control.Applicative  ((<|>))
-import Prelude hiding       (writeFile,lookup,words)
-import Data.Text            (Text, words, intercalate)
-import Data.Char            (toLower)
+import Data.Bifunctor             (first)
+import Data.ByteString            (writeFile)
+import Data.Char                  (toLower)
+import Data.List                  (isSuffixOf)
+import Data.Maybe                 (fromMaybe)
+import Data.MonoTraversable       (omap)
+import Data.Text                  (Text, intercalate, words)
+import Data.Text.Encoding.Error   (UnicodeException)
+import Data.Yaml.Aeson            (FromJSON, ToJSON, decodeFileEither, encode)
 import Database.PostgreSQL.Simple
-import Data.MonoTraversable (omap)
-import Language.Bing (BingError)
-import Network.HTTP.Conduit (HttpException)
-import Data.Text.Encoding.Error (UnicodeException)
+import GHC.Generics               (Generic)
+import Language.Bing              (BingError)
+import Network.HTTP.Conduit       (HttpException)
+import Prelude                    hiding (lookup, words, writeFile)
+import Safe                       (headMay)
+import System.Environment         (lookupEnv)
+import System.Process             (callCommand)
 
 
 -- | Application data saved in a local config file. Information for Microsoft Translator API and
 --   database name and user.
 data ShivaConfig = Config
-  { clientId :: String
+  { clientId     :: String
   , clientSecret :: String
-  , dbName :: String
-  , dbUser :: String
+  , dbName       :: String
+  , dbUser       :: String
   } deriving (Show, Generic)
 
 instance FromJSON ShivaConfig
@@ -83,10 +83,10 @@ connectInfo Config {..} = defaultConnectInfo { connectUser = dbUser, connectData
 
 -- | Data related to a source of news articles accessed via RSS.
 data Source = Source
-  { sourceTitle :: Text
-  , feedUrl :: String
+  { sourceTitle      :: Text
+  , feedUrl          :: String
   , contentExtractor :: Text -> Text
-  , imageExtractor :: Text -> Maybe Text }
+  , imageExtractor   :: Text -> Maybe Text }
 
 
 -- | The representation of the source title used in the corresponding URL (lowercase, dash-separated).

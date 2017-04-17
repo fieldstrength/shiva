@@ -8,13 +8,13 @@ module Shiva.Extract (
   extractImgUrl_noParams,
 ) where
 
-import Text.HTML.TagSoup
-import Text.StringLike         (StringLike, strConcat)
-import Text.HTML.TagSoup.Match
-import Safe                    (tailSafe, headMay)
-import Data.Text               (Text)
 import Data.Sequences          (takeWhile)
-import Prelude hiding          (writeFile, readFile, takeWhile)
+import Data.Text               (Text)
+import Prelude                 hiding (readFile, takeWhile, writeFile)
+import Safe                    (headMay, tailSafe)
+import Text.HTML.TagSoup
+import Text.HTML.TagSoup.Match
+import Text.StringLike         (StringLike, strConcat)
 
 
 

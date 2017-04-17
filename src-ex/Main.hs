@@ -1,12 +1,12 @@
 module Main where
 
-import Shiva.Server        (runServer)
-import Shiva.Config        (setup, setupDB)
-import Shiva.Sources       (sources)
+import Shiva.Config       (setup, setupDB)
+import Shiva.Server       (runServer)
+import Shiva.Sources      (sources)
 
-import System.Environment  (getArgs)
-import System.Process      (callCommand)
-import Control.Concurrent  (forkIO, threadDelay)
+import Control.Concurrent (forkIO, threadDelay)
+import System.Environment (getArgs)
+import System.Process     (callCommand)
 
 
 launch :: IO ()

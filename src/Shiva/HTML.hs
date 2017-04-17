@@ -1,5 +1,5 @@
-{-# LANGUAGE OverloadedStrings,
-             RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Shiva.HTML (
 
@@ -14,16 +14,16 @@ module Shiva.HTML (
 
 ) where
 
-import Shiva.Translation
 import Shiva.Config      (Source (..), titleCode)
-import Shiva.Sources     (sources)
 import Shiva.Feeds
+import Shiva.Sources     (sources)
+import Shiva.Translation
 
+import Control.Monad     (when)
+import Data.Maybe        (fromJust, isJust)
+import Data.Monoid       ((<>))
 import Lucid.Base
 import Lucid.Html5
-import Data.Monoid ((<>))
-import Data.Maybe (isJust,fromJust)
-import Control.Monad (when)
 
 
 ---- Html Infra ----

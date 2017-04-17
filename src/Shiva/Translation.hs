@@ -1,6 +1,6 @@
-{-# LANGUAGE RecordWildCards,
-             OverloadedStrings,
-             TypeApplications #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Shiva.Translation (
   SvenskaPair (..),
@@ -19,18 +19,18 @@ module Shiva.Translation (
 
 ) where
 
-import Shiva.Config
+import           Shiva.Config
 -- import Shiva.Database
-import Shiva.Utils               (zipWithDefault)
-import Data.MonoTraversable      (omap)
-import Control.Monad.Catch       (throwM)
-import Safe                      (lastMay)
-import Language.Bing             (translate, BingLanguage (..))
-import Data.Text                 (Text, split)
-import qualified Data.Text as T
-import Control.Monad.State
-import Data.List                 (intersperse)
+import           Control.Monad.Catch   (throwM)
+import           Control.Monad.State
 import qualified Data.ByteString.Char8 as BSC
+import           Data.List             (intersperse)
+import           Data.MonoTraversable  (omap)
+import           Data.Text             (Text, split)
+import qualified Data.Text             as T
+import           Language.Bing         (BingLanguage (..), translate)
+import           Safe                  (lastMay)
+import           Shiva.Utils           (zipWithDefault)
 
 
 
@@ -40,7 +40,7 @@ data SvenskaPair = SvenskaPair
 
 data ShivaResult = ShivaResult
   { success :: Bool
-  , result :: [SvenskaPair] }
+  , result  :: [SvenskaPair] }
 
 
 -- | Core translation function. Used only with counter machinery below.
@@ -98,13 +98,13 @@ translateSentences = translateSet . prepSep
 
 data TransResult = TransResult
   { theresult :: ShivaResult
-  , svTxt :: Text
-  , enTxt :: Text }
+  , svTxt     :: Text
+  , enTxt     :: Text }
 
 data TransArticle = TransArticle
-  { thetitle :: Text
-  , origUrl :: Text
-  , imageUrl :: Maybe Text
+  { thetitle   :: Text
+  , origUrl    :: Text
+  , imageUrl   :: Maybe Text
   , bodyResult :: ShivaResult }
 
 

@@ -1,4 +1,5 @@
-{-# LANGUAGE RecordWildCards, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Shiva.Feeds (
   FeedData (..),
@@ -10,21 +11,21 @@ module Shiva.Feeds (
 ) where
 
 import Shiva.Config
-import Shiva.Utils                (nothingMsg, separate)
-import Shiva.Get                  (httpGet)
+import Shiva.Get            (httpGet)
+import Shiva.Utils          (nothingMsg, separate)
 
-import Safe                       (headMay, lastMay)
-import Control.Monad              ((<=<))
-import Data.Maybe                 (fromJust, catMaybes)
-import Text.XML.Light.Lexer       (XmlSource)
-import Text.XML.Light.Input       (parseXMLDoc)
-import Text.RSS.Import            (elementToRSS)
-import Text.RSS.Syntax            (RSS (..), RSSItem (..), RSSChannel (..))
-import Data.Time.Format           (readSTime, formatTime)
-import Data.Time                  (UTCTime, defaultTimeLocale)
-import Data.Either                (rights, lefts)
-import Data.Text                  (Text, pack)
-import Control.Monad.Catch (throwM)
+import Control.Monad        ((<=<))
+import Control.Monad.Catch  (throwM)
+import Data.Either          (lefts, rights)
+import Data.Maybe           (catMaybes, fromJust)
+import Data.Text            (Text, pack)
+import Data.Time            (UTCTime, defaultTimeLocale)
+import Data.Time.Format     (formatTime, readSTime)
+import Safe                 (headMay, lastMay)
+import Text.RSS.Import      (elementToRSS)
+import Text.RSS.Syntax      (RSS (..), RSSChannel (..), RSSItem (..))
+import Text.XML.Light.Input (parseXMLDoc)
+import Text.XML.Light.Lexer (XmlSource)
 -- | RSS date format used by DN News feed.
 --   for reference:
 --   http://hackage.haskell.org/package/time-1.6.0.1/docs/Data-Time-Format.html#v:formatTime
@@ -71,15 +72,15 @@ loadRSS url = do
 ----
 
 data FeedItem = FeedItem
-  { itemTime :: UTCTime
+  { itemTime   :: UTCTime
   , sourceName :: Text
-  , svTitle :: Text
-  , enTitle :: Text
-  , urlFrag :: Text
-  , urlFull :: Text } deriving (Show,Eq,Ord)
+  , svTitle    :: Text
+  , enTitle    :: Text
+  , urlFrag    :: Text
+  , urlFull    :: Text } deriving (Show,Eq,Ord)
 
 data FeedData = FeedData
-   { feedItems :: [FeedItem]
+   { feedItems    :: [FeedItem]
    , invalidItems :: [String] } deriving Show
 
 

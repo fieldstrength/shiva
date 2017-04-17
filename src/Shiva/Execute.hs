@@ -8,21 +8,21 @@ module Shiva.Execute (
 ) where
 
 
-import Shiva.Feeds
 import Shiva.Config
 import Shiva.Database
-import Shiva.Translation
+import Shiva.Feeds
+import Shiva.Get           (httpGet)
 import Shiva.HTML
-import Shiva.Get                 (httpGet)
+import Shiva.Translation
 
-import Data.Bifunctor            (first, second)
-import Prelude hiding            (lookup)
-import Data.List                 (sortBy)
-import Data.Map                  (Map,lookup,fromList)
+import Control.Monad.Catch (catchAll, throwM)
+import Control.Monad.State (lift)
+import Data.Bifunctor      (first, second)
+import Data.List           (sortBy)
+import Data.Map            (Map, fromList, lookup)
+import Data.Text           (Text, empty)
 import Lucid
-import Control.Monad.State       (lift)
-import Data.Text                 (Text,empty)
-import Control.Monad.Catch (throwM, catchAll)
+import Prelude             hiding (lookup)
 
 readMetadataMap :: Source -> ShivaM (Map Text Text)
 readMetadataMap = fmap fromList . readPairs

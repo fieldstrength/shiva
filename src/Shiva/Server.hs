@@ -5,19 +5,19 @@ module Shiva.Server (
   testServer
 ) where
 
-import Shiva.HTML
-import Shiva.Execute
-import Shiva.Config
-import Shiva.Sources
 import Paths_shiva                   (getDataFileName)
+import Shiva.Config
+import Shiva.Execute
+import Shiva.HTML
+import Shiva.Sources
 
-import Web.Scotty
-import Lucid
-import Network.Wai.Middleware.Static
-import Data.Text                     (Text)
-import Control.Monad.Reader          (runReaderT)
 import Control.Monad.Except          (runExceptT)
 import Control.Monad.IO.Class        (liftIO)
+import Control.Monad.Reader          (runReaderT)
+import Data.Text                     (Text)
+import Lucid
+import Network.Wai.Middleware.Static
+import Web.Scotty
 
 
 ---- Page generation ----

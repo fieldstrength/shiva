@@ -15,9 +15,9 @@ nothingMsg _ (Just x) = Right x
 
 
 zipWithDefault :: (a -> a -> b) -> a -> [a] -> [a] -> [b]
-zipWithDefault _ _ [] [] = []
-zipWithDefault f d xs [] = zipWith f xs (repeat d)
-zipWithDefault f d [] ys = zipWith f (repeat d) ys
+zipWithDefault _ _ [] []         = []
+zipWithDefault f d xs []         = zipWith f xs (repeat d)
+zipWithDefault f d [] ys         = zipWith f (repeat d) ys
 zipWithDefault f d (x:xs) (y:ys) = f x y : zipWithDefault f d xs ys
 
 ----
