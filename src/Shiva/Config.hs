@@ -13,13 +13,11 @@ module Shiva.Config (
   ShivaData (..),
 
   -- ** Load data
-
   loadEverything,
 
   -- ** Setup
   setup,
   setupDB,
-
 
   -- * Monads
   IOX,
@@ -29,13 +27,11 @@ module Shiva.Config (
   runIOX,
 
 -- ** Reader environment access
-
   appConfig,
   appConnection,
   appSources,
   srcLookup,
   codeLookup
-
 
 ) where
 
@@ -91,13 +87,12 @@ titleCode = intercalate "-" . words . omap toLower . sourceTitle
 
 -- | All data needed
 data ShivaData = ShivaData
-  { config :: ShivaConfig
+  { config     :: ShivaConfig
   , connection :: Connection
   , sourceList :: [Source] }
 
 
 -----
-
 
 type IOX = ExceptT String IO
 
@@ -106,17 +101,15 @@ type ShivaM = ReaderT ShivaData IOX
 type CounterM = StateT Int ShivaM
 
 
-
 runIOX :: IOX a -> IO a
 runIOX (ExceptT io) = do
   mx <- io
   case mx of
     Left str -> error str
-    Right x  -> return x
+    Right x  -> pure x
 
 
 -----
-
 
 appConfig :: ShivaM ShivaConfig
 appConfig = asks config
@@ -131,13 +124,13 @@ appSources = asks sourceList
 srcLookup :: Text -> ShivaM (Maybe Source)
 srcLookup name = do
   srcs <- appSources
-  return $ headMay [ x | x <- srcs, sourceTitle x == name ]
+  pure $ headMay [ x | x <- srcs, sourceTitle x == name ]
 
 -- | Look up a source by title code, the name format used in URLs.
 codeLookup :: Text -> ShivaM (Maybe Source)
 codeLookup code = do
   srcs <- appSources
-  return $ headMay [ x | x <- srcs, titleCode x == code ]
+  pure $ headMay [ x | x <- srcs, titleCode x == code ]
 
 
 -----
@@ -146,8 +139,8 @@ homePath :: IOX FilePath
 homePath = ExceptT $ do
   mh <- lookupEnv "HOME"
   case mh of
-    Nothing   -> return $ Left "No HOME environment variable."
-    Just home -> return $ Right $ slashPad home
+    Nothing   -> pure $ Left "No HOME environment variable."
+    Just home -> pure $ Right $ slashPad home
 
 slashPad :: String -> String
 slashPad str = if "/" `isSuffixOf` str then str else str ++ "/"
@@ -172,11 +165,10 @@ loadEverything :: [Source] -> IOX ShivaData
 loadEverything srcs = do
   conf <- loadConfig
   conn <- liftIO $ connect (connectInfo conf)
-  return $ ShivaData conf conn srcs
+  pure $ ShivaData conf conn srcs
 
 
 ----- Setup -----
-
 
 enterConfig :: IO ShivaConfig
 enterConfig = do
@@ -186,21 +178,20 @@ enterConfig = do
   cid <- getLine
   putStrLn "Enter MS Translator Client Secret: "
   csecret <- getLine
-  putStrLn "Enter database name (blank = 'shivadb'): "
+  putStrLn "Enter database name (blank = 'shiva'): "
   dbn <- getLine
-  let dbname = if null dbn then "shivadb" else dbn
+  let dbname = if null dbn then "shiva" else dbn
   if null usr then putStrLn "Enter database user name: "
               else putStrLn $ "Enter database user name (blank = '" ++ usr ++ "')"
   dbuser <- getLine
-  let conf = Config cid csecret dbname dbuser
-  return conf
+  pure $ Config cid csecret dbname dbuser
 
 yesOrNo :: IO Bool
 yesOrNo = do
   s <- getLine
   case s of
-    'y':_ -> return True
-    'n':_ -> return False
+    'y':_ -> pure True
+    'n':_ -> pure False
     _     -> putStrLn "Please answer yes or no (y/n): " *> yesOrNo
 
 -- | Command line script to enter and save app configuration data.
@@ -214,7 +205,7 @@ setup = do
       putStrLn "Save (hidden) config file in home directory?"
       putStrLn "This will make it stable across package reinstalls. Enter (y/n): "
       b <- yesOrNo
-      path <- if b then return (h ++ ".shiva.yaml")
+      path <- if b then pure (h ++ ".shiva.yaml")
                    else configPath
       writeFile path (encode conf)
       putStrLn $ "Configuration saved at " ++ path ++ "."
