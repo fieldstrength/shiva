@@ -27,6 +27,7 @@ runHtmlGen d f =
     fmap (either error id) -- not unsafe due to 'catchErrorPage' below
   . runExceptT
   . flip runReaderT d
+  . runShivaM
   . catchErrorPage
   . fmap f
 

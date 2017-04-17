@@ -45,7 +45,7 @@ translateTitles ds = do
 
 loadFeedData :: Source -> ShivaM FeedData
 loadFeedData src = do
-  fd <- lift $ loadFeedPrelim src
+  fd <- ShivaM <$> lift $ loadFeedPrelim src
   m  <- readMetadataMap src
   let (xs,ys) = subMetadata m (feedItems fd)
   zs <- translateTitles ys
@@ -85,7 +85,7 @@ translateSaveBodyText ufrag sv = do
 
 retrieveAndExtract :: FeedItem -> ShivaM TransArticle
 retrieveAndExtract FeedItem {..} = do
-  txt <- lift $ httpGet urlFull
+  txt <- ShivaM <$> lift $ httpGet urlFull
   msrc <- srcLookup sourceName
   case msrc of
     Nothing -> throwError $ "retrieveContent: unknown sourceName '"++ unpack sourceName ++ "'."

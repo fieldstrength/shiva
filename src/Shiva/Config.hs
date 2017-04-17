@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric,
              OverloadedStrings,
-             RecordWildCards #-}
+             RecordWildCards,
+             GeneralizedNewtypeDeriving #-}
 
 -- | The configuration data type and IO operations to set up, save and load it.
 --   Also aliased for the different layers of the monad transformer stack we employ.
@@ -21,7 +22,7 @@ module Shiva.Config (
 
   -- * Monads
   IOX,
-  ShivaM,
+  ShivaM (..),
   CounterM,
 
   runIOX,
@@ -96,7 +97,9 @@ data ShivaData = ShivaData
 
 type IOX = ExceptT String IO
 
-type ShivaM = ReaderT ShivaData IOX
+newtype ShivaM a
+    = ShivaM { runShivaM :: ReaderT ShivaData IOX a }
+    deriving (MonadReader ShivaData, MonadIO, Functor, Applicative, Monad, MonadError String)
 
 type CounterM = StateT Int ShivaM
 
