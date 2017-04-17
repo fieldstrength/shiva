@@ -58,7 +58,7 @@ trans sv = do
 
 runCounter :: CounterM a -> ShivaM a
 runCounter cm = do
-  (x,s) <- runStateT cm 0
+  (x,_) <- runStateT cm 0
   -- save translation event record in DB here
   return x
 

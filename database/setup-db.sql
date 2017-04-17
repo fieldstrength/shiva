@@ -5,7 +5,7 @@ BEGIN;
         , category      VARCHAR NOT NULL
         , sv_title      VARCHAR NOT NULL
         , en_title      VARCHAR NOT NULL
-        , url_fragment  VARCHAR UNIQUE NOT NULL
+        , url_fragment  VARCHAR NOT NULL
         , url           VARCHAR UNIQUE NOT NULL
         , created_at    TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
         , updated_at    TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL

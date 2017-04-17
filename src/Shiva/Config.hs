@@ -18,6 +18,7 @@ module Shiva.Config (
 
   -- ** Setup
   setup,
+  setupDB,
 
 
   -- * Monads
@@ -45,6 +46,7 @@ import GHC.Generics         (Generic)
 import Data.Yaml.Aeson      (FromJSON, ToJSON, encode, decodeFileEither)
 import Data.List            (isSuffixOf)
 import System.Environment   (lookupEnv)
+import System.Process       (callCommand)
 import Data.ByteString      (writeFile)
 import Control.Monad.Except
 import Control.Monad.Reader
@@ -216,3 +218,14 @@ setup = do
                    else configPath
       writeFile path (encode conf)
       putStrLn $ "Configuration saved at " ++ path ++ "."
+      putStrLn "Create and set up the database?"
+      db <- yesOrNo
+      if db then setupDB else pure ()
+      putStrLn "Setup complete!"
+
+setupDB :: IO ()
+setupDB = do
+  Config {..} <- runIOX loadConfig
+  sqlFile <- getDataFileName "database/setup-db.sql"
+  callCommand $ "createdb " ++ dbName ++ " --owner=" ++ dbUser
+  callCommand $ "psql " ++ dbName ++ " -f " ++ sqlFile

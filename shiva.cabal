@@ -14,7 +14,8 @@ build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
-data-files:          static/css/style.css,
+data-files:          database/setup-db.sql,
+                     static/css/style.css,
                      static/fonts/bansheepilotblack.ttf
                      static/fonts/Sansation_Regular.ttf
                      static/fonts/Sansation_Light.ttf

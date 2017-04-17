@@ -35,12 +35,13 @@ deTuplize (t,src,s,e,u,v) = FeedItem (unsafeParseTime $ unpack t) src s e u v
 writeAritcleMetadata :: [FeedItem] -> ShivaM ()
 writeAritcleMetadata xs = runDbAction $ \conn -> void $
   executeMany conn
-  "INSERT INTO article_metadata (date, category, sv_title, en_title, urlFrag, urlFull) VALUES (?,?,?,?,?,?)" $
+  "INSERT INTO article_metadata (date, category, sv_title, en_title, url_fragment, url) VALUES (?,?,?,?,?,?)" $
   tuplize <$> xs
 
 readArticleMetadata :: Text -> ShivaM (Maybe FeedItem)
 readArticleMetadata name = runDbAction $ \conn -> do
-  l <- query conn "SELECT * FROM article_metadata WHERE urlFrag = ?" (Only name)
+  l <- query conn "SELECT (date, category, sv_title, en_title, url_fragment, url) \
+                  \FROM article_metadata WHERE url_fragment = ?" (Only name)
   return . headMay $ deTuplize <$> l
 
 readPairs :: Source -> ShivaM [(Text,Text)]
@@ -54,9 +55,9 @@ type ContentData = (Text,Text,Text)
 
 readContentData :: Text -> ShivaM (Maybe (Text,Text))
 readContentData urlfrag = runDbAction $ \conn -> do
-  l <- query conn "SELECT sv_body, en_body FROM article_content WHERE urlFrag = ?" (Only urlfrag)
+  l <- query conn "SELECT sv_body, en_body FROM article_content WHERE url_fragment = ?" (Only urlfrag)
   return $ headMay l
 
 writeContentData :: ContentData -> ShivaM ()
 writeContentData c = runDbAction $ \conn ->
-  void $ execute conn "INSERT INTO article_content (urlFrag, sv_body, en_body) VALUES (?,?,?)" c
+  void $ execute conn "INSERT INTO article_content (url_fragment, sv_body, en_body) VALUES (?,?,?)" c
