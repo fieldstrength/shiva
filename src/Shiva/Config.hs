@@ -27,7 +27,10 @@ module Shiva.Config (
 
   runIOX,
 
--- ** Reader environment access
+  -- * Exceptions
+  ShivaException (..),
+
+  -- ** Reader environment access
   appConfig,
   appConnection,
   appSources,
@@ -48,6 +51,7 @@ import Data.ByteString      (writeFile)
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State
+import Control.Monad.Catch
 import Data.Bifunctor       (first)
 import Data.Maybe           (fromMaybe)
 import Control.Applicative  ((<|>))
@@ -56,6 +60,9 @@ import Data.Text            (Text, words, intercalate)
 import Data.Char            (toLower)
 import Database.PostgreSQL.Simple
 import Data.MonoTraversable (omap)
+import Language.Bing (BingError)
+import Network.HTTP.Conduit (HttpException)
+import Data.Text.Encoding.Error (UnicodeException)
 
 
 -- | Application data saved in a local config file. Information for Microsoft Translator API and
@@ -98,8 +105,8 @@ data ShivaData = ShivaData
 type IOX = ExceptT String IO
 
 newtype ShivaM a
-    = ShivaM { runShivaM :: ReaderT ShivaData IOX a }
-    deriving (MonadReader ShivaData, MonadIO, Functor, Applicative, Monad, MonadError String)
+    = ShivaM { runShivaM :: ReaderT ShivaData IO a }
+    deriving (Functor, Applicative, Monad, MonadReader ShivaData, MonadIO, MonadThrow, MonadCatch)
 
 type CounterM = StateT Int ShivaM
 
@@ -110,6 +117,21 @@ runIOX (ExceptT io) = do
   case mx of
     Left str -> error str
     Right x  -> pure x
+
+
+-----
+
+data ShivaException
+    = TranslationException BingError
+    | PraseRSSFeedException String
+    | NetworkException HttpException
+    | TextException UnicodeException
+    | UnknownFeed Text
+    | UnknownSourceName Text
+    | MissingArticle Text
+    deriving Show
+
+instance Exception ShivaException
 
 
 -----

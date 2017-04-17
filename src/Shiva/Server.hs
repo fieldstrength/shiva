@@ -23,13 +23,10 @@ import Control.Monad.IO.Class        (liftIO)
 ---- Page generation ----
 
 runHtmlGen :: ShivaData -> (a -> Html ()) -> ShivaM a -> IO (Html ())
-runHtmlGen d f =
-    fmap (either error id) -- not unsafe due to 'catchErrorPage' below
-  . runExceptT
-  . flip runReaderT d
-  . runShivaM
-  . catchErrorPage
-  . fmap f
+runHtmlGen d f = flip runReaderT d
+               . runShivaM
+               . catchErrorPage
+               . fmap f
 
 
 generateFeedPage :: ShivaData -> Text -> IO (Html ())

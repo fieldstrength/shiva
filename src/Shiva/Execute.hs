@@ -20,10 +20,9 @@ import Prelude hiding            (lookup)
 import Data.List                 (sortBy)
 import Data.Map                  (Map,lookup,fromList)
 import Lucid
-import Control.Monad.Error.Class (throwError, catchError)
 import Control.Monad.State       (lift)
-import Data.Text                 (Text,unpack,empty)
-
+import Data.Text                 (Text,empty)
+import Control.Monad.Catch (throwM, catchAll)
 
 readMetadataMap :: Source -> ShivaM (Map Text Text)
 readMetadataMap = fmap fromList . readPairs
@@ -58,12 +57,12 @@ loadFeedByTitleCode code = do
   msrc <- codeLookup code
   case msrc of
     Just src -> loadFeedData src
-    Nothing -> throwError "I don't recognize any feed with that title"
+    Nothing  -> throwM $ UnknownFeed code
 
 
 -- | If an error is encountered in the ShivaM monad, report the error with a webpage.
 catchErrorPage :: ShivaM (Html ()) -> ShivaM (Html ())
-catchErrorPage sh = catchError sh $ return . errorPage
+catchErrorPage = flip catchAll (pure . errorPage . show)
 
 
 -- | Given swedish and english text separated by |, return the corresponding ShivaResult
@@ -88,10 +87,10 @@ retrieveAndExtract FeedItem {..} = do
   txt <- ShivaM <$> lift $ httpGet urlFull
   msrc <- srcLookup sourceName
   case msrc of
-    Nothing -> throwError $ "retrieveContent: unknown sourceName '"++ unpack sourceName ++ "'."
+    Nothing -> throwM $ UnknownSourceName sourceName
     Just Source {..} -> do
       let contentTxt = contentExtractor txt
-      let img = imageExtractor txt
+          img        = imageExtractor   txt
       r <- translateSaveBodyText urlFrag contentTxt
       return $ TransArticle svTitle urlFull img r
 
@@ -111,4 +110,4 @@ generateResultFromName urlfrag = do
   md <- readArticleMetadata urlfrag
   case md of
     Just d  -> generateContentResult d
-    Nothing -> throwError "Article by that name seems to be missing."
+    Nothing -> throwM $ MissingArticle urlfrag

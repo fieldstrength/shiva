@@ -23,13 +23,12 @@ import Shiva.Config
 -- import Shiva.Database
 import Shiva.Utils               (zipWithDefault)
 import Data.MonoTraversable      (omap)
-
+import Control.Monad.Catch       (throwM)
 import Safe                      (lastMay)
 import Language.Bing             (translate, BingLanguage (..))
 import Data.Text                 (Text, split)
 import qualified Data.Text as T
 import Control.Monad.State
-import Control.Monad.Error.Class (throwError)
 import Data.List                 (intersperse)
 import qualified Data.ByteString.Char8 as BSC
 
@@ -50,7 +49,7 @@ trans sv = do
   Config {..} <- appConfig
   mtxt <- liftIO $ translate (BSC.pack clientId) (BSC.pack clientSecret) sv Swedish English
   case mtxt of
-    Left err -> throwError (show err)
+    Left err -> throwM (TranslationException err)
     Right en -> return en
 
 

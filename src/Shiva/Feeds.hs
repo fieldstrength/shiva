@@ -20,12 +20,11 @@ import Text.XML.Light.Lexer       (XmlSource)
 import Text.XML.Light.Input       (parseXMLDoc)
 import Text.RSS.Import            (elementToRSS)
 import Text.RSS.Syntax            (RSS (..), RSSItem (..), RSSChannel (..))
-import Control.Monad.Error.Class  (throwError)
 import Data.Time.Format           (readSTime, formatTime)
 import Data.Time                  (UTCTime, defaultTimeLocale)
 import Data.Either                (rights, lefts)
 import Data.Text                  (Text, pack)
-
+import Control.Monad.Catch (throwM)
 -- | RSS date format used by DN News feed.
 --   for reference:
 --   http://hackage.haskell.org/package/time-1.6.0.1/docs/Data-Time-Format.html#v:formatTime
@@ -58,19 +57,18 @@ showTime = formatTime defaultTimeLocale timeFormat2
 type Err = Either String
 
 
-interpRSS :: XmlSource s => s -> Err RSS
-interpRSS = nothingMsg "Problem interpreting feed XML." . (elementToRSS <=< parseXMLDoc)
+interpRSS :: XmlSource s => s -> Maybe RSS
+interpRSS = elementToRSS <=< parseXMLDoc
 
-loadRSS :: Text -> IOX RSS
+loadRSS :: Text -> IO RSS
 loadRSS url = do
-  mrss <- interpRSS <$> httpGet url
-  case mrss of
-    Left er -> throwError er
-    Right r -> return r
+  mRss <- interpRSS <$> httpGet url
+  case mRss of
+    Nothing  -> throwM $ PraseRSSFeedException "Couldn't parse RSS feed XML"
+    Just rss -> pure rss
 
 
 ----
-
 
 data FeedItem = FeedItem
   { itemTime :: UTCTime
@@ -100,10 +98,10 @@ mkPrelim srcName RSSItem {..} = FeedItem
           extractURLFrag = lastMay . separate '/'
 
 
-loadItems :: Text -> Text -> IOX [Err FeedItem]
+loadItems :: Text -> Text -> IO [Err FeedItem]
 loadItems name url = map (mkPrelim name) . extractRSSItems <$> loadRSS url
 
-loadFeedPrelim :: Source -> IOX FeedData
+loadFeedPrelim :: Source -> IO FeedData
 loadFeedPrelim Source {..} = do
   mxs <- loadItems sourceTitle (pack feedUrl)
-  return $ FeedData (rights mxs) (lefts mxs)
+  pure $ FeedData (rights mxs) (lefts mxs)
