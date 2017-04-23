@@ -1,12 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Shiva.Database (
+
   readArticleMetadata,
   readPairs,
   writeAritcleMetadata,
 
   readContentData,
   writeContentData,
+
+  runDbAction,
 
 ) where
 

@@ -30,7 +30,9 @@ library
                        Shiva.Database,
                        Shiva.Execute,
                        Shiva.Sources,
-                       Shiva.Get
+                       Shiva.Get,
+                       Shiva.Table.ArticleMetadata,
+                       Shiva.Table.ArticleContent
 
   other-modules:       Paths_shiva,
                        Shiva.Utils
@@ -58,7 +60,9 @@ library
                        time,
                        safe,
                        mono-traversable,
-                       exceptions
+                       exceptions,
+                       opaleye,
+                       product-profunctors
 
 
   hs-source-dirs:      src

@@ -77,7 +77,7 @@ data FeedItem = FeedItem
   , svTitle    :: Text
   , enTitle    :: Text
   , urlFrag    :: Text
-  , urlFull    :: Text } deriving (Show,Eq,Ord)
+  , urlFull    :: Text } deriving (Show, Eq, Ord)
 
 data FeedData = FeedData
    { feedItems    :: [FeedItem]
