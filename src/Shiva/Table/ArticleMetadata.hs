@@ -80,12 +80,12 @@ table = Table "article_metadata" $ pArticleMetadata ArticleMetadata
 queryAll :: Query ArticleMetadataR
 queryAll = queryTable table
 
-insertMetadata :: [ArticleMetadataIn] -> ShivaM Int
-insertMetadata xs = fmap fromIntegral . runDbAction $ \conn ->
+insert :: [ArticleMetadataIn] -> ShivaM Int
+insert xs = fmap fromIntegral . runDbAction $ \conn ->
     runInsertMany conn table (toW <$> xs)
 
-getMetadata :: Text -> ShivaM [ArticleMetadata]
-getMetadata frag = runDbAction $ \conn ->
+get :: Text -> ShivaM [ArticleMetadata]
+get frag = runDbAction $ \conn ->
     runQuery conn $ proc () -> do
         x <- queryAll -< ()
         restrict -< urlFrag x .=== pgStrictText frag
