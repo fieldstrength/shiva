@@ -14,7 +14,7 @@ build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
-data-files:          database/setup-db.sql,
+data-files:          database/setup.sql,
                      static/css/style.css,
                      static/fonts/bansheepilotblack.ttf
                      static/fonts/Sansation_Regular.ttf
@@ -32,7 +32,8 @@ library
                        Shiva.Sources,
                        Shiva.Get,
                        Shiva.Table.ArticleMetadata,
-                       Shiva.Table.ArticleContent
+                       Shiva.Table.ArticleContent,
+                       Shiva.Storage
 
   other-modules:       Paths_shiva,
                        Shiva.Utils

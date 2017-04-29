@@ -26,6 +26,8 @@ import Text.RSS.Import      (elementToRSS)
 import Text.RSS.Syntax      (RSS (..), RSSChannel (..), RSSItem (..))
 import Text.XML.Light.Input (parseXMLDoc)
 import Text.XML.Light.Lexer (XmlSource)
+
+
 -- | RSS date format used by DN News feed.
 --   for reference:
 --   http://hackage.haskell.org/package/time-1.6.0.1/docs/Data-Time-Format.html#v:formatTime

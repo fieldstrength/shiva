@@ -90,3 +90,10 @@ get frag = runDbAction $ \conn ->
         x <- queryAll -< ()
         restrict -< urlFrag x .=== pgStrictText frag
         returnA -< x
+
+getPairs :: Text -> ShivaM [(Text, Text)]
+getPairs src = runDbAction $ \conn ->
+    runQuery conn $ proc () -> do
+        x <- queryAll -< ()
+        restrict -< sourceName x .=== pgStrictText src
+        returnA -< (svTitle x, enTitle x)

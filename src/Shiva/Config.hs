@@ -242,6 +242,6 @@ setup = do
 setupDB :: IO ()
 setupDB = do
   Config {..} <- runIOX loadConfig
-  sqlFile <- getDataFileName "database/setup-db.sql"
+  sqlFile <- getDataFileName "database/setup.sql"
   callCommand $ "createdb " ++ dbName ++ " --owner=" ++ dbUser
   callCommand $ "psql " ++ dbName ++ " -f " ++ sqlFile
