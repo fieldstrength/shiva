@@ -9,7 +9,7 @@ module Shiva.Execute (
 
 
 import Shiva.Config
-import Shiva.Database
+import Shiva.Storage
 import Shiva.Feeds
 import Shiva.Get           (httpGet)
 import Shiva.HTML
@@ -25,7 +25,7 @@ import Lucid
 import Prelude             hiding (lookup)
 
 readMetadataMap :: Source -> ShivaM (Map Text Text)
-readMetadataMap = fmap fromList . readPairs
+readMetadataMap = fmap fromList . readMetaPairs
 
 subStep :: Map Text Text -> FeedItem -> ([FeedItem],[FeedItem]) -> ([FeedItem],[FeedItem])
 subStep m i = case lookup (svTitle i) m of
@@ -40,7 +40,7 @@ subMetadata m = foldr (subStep m) ([],[])
 translateTitles :: [FeedItem] -> ShivaM [FeedItem]
 translateTitles ds = do
   ps <- translateSet $ svTitle <$> ds
-  return $ zipWith (\d p -> d {enTitle = english p }) ds ps
+  pure $ zipWith (\d p -> d {enTitle = english p }) ds ps
 
 loadFeedData :: Source -> ShivaM FeedData
 loadFeedData src = do
@@ -48,8 +48,8 @@ loadFeedData src = do
   m  <- readMetadataMap src
   let (xs,ys) = subMetadata m (feedItems fd)
   zs <- translateTitles ys
-  writeAritcleMetadata zs
-  return $ fd { feedItems = sortBy (flip compare) (xs ++ zs) }
+  writeMetadata zs
+  pure $ fd { feedItems = sortBy (flip compare) (xs ++ zs) }
 
 -- | Load the RSS feed page for a given 'Source' by specifying it's 'titleCode'.
 loadFeedByTitleCode :: Text -> ShivaM FeedData
@@ -77,10 +77,10 @@ genResult sv en =
 -- | Take an URL fragment (functioning as an identifier) and text, then translate the text,
 --   save the result to the database, and return it.
 translateSaveBodyText :: Text -> Text -> ShivaM ShivaResult
-translateSaveBodyText ufrag sv = do
-  TransResult {..} <- translateArticleText sv
-  writeContentData (ufrag,svTxt,enTxt)
-  return theresult
+translateSaveBodyText ufrag sv' = do
+    TransResult result sv en <- translateArticleText sv'
+    writeContent ufrag sv en
+    pure result
 
 retrieveAndExtract :: FeedItem -> ShivaM TransArticle
 retrieveAndExtract FeedItem {..} = do
@@ -92,22 +92,24 @@ retrieveAndExtract FeedItem {..} = do
       let contentTxt = contentExtractor txt
           img        = imageExtractor   txt
       r <- translateSaveBodyText urlFrag contentTxt
-      return $ TransArticle svTitle urlFull img r
+      pure $ TransArticle svTitle urlFull img r
 
 
 generateContentResult :: FeedItem -> ShivaM TransArticle
 generateContentResult fi@FeedItem {..} = do
-  mx <- readContentData urlFrag
+  mx <- readContent urlFrag
   case mx of
-    Just (s,e) -> return $ TransArticle svTitle urlFull Nothing $ genResult s e
-    Nothing    -> retrieveAndExtract fi
+    Nothing   -> retrieveAndExtract fi
+    Just (_, svBody, enBody) -> pure $
+        TransArticle svTitle urlFull Nothing $
+            genResult svBody enBody
 
 
 -- | Used to generate a web page for an article, identified by a part of a URL. This relies on the
 --   article metadata already being in the database, due to its appearing in an RSS listing page.
 generateResultFromName :: Text -> ShivaM TransArticle
 generateResultFromName urlfrag = do
-  md <- readArticleMetadata urlfrag
+  md <- readMetadata urlfrag
   case md of
     Just d  -> generateContentResult d
     Nothing -> throwM $ MissingArticle urlfrag

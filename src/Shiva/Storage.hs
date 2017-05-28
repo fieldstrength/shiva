@@ -62,9 +62,7 @@ writeContent urlFrag svBody enBody = void $
         createdAt = ()
         updatedAt = ()
 
-{-
-
------ Article Content
+{------ Article Content
 
 type ContentData = (Text,Text,Text)
 
