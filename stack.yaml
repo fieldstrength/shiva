@@ -2,14 +2,14 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration/
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-8.11
+resolver: lts-8.15
 
 # Local packages, usually specified by relative directory name
 packages:
   - '.'
   - location:
-      git: https://github.com/BlackBrane/Microsoft-Translator-Haskell/
-      commit: 1e9ed35f0702ae1f624de154f9a30a5c8813c11a
+      git: https://github.com/BlackBrane/microsoft-translator/
+      commit: c98e1df776f25467ced294cb27ded450f0f7b16f
     extra-dep: true
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)

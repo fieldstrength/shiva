@@ -41,7 +41,7 @@ library
   other-extensions:    OverloadedStrings
 
   build-depends:       base,
-                       MicrosoftTranslator,
+                       microsoft-translator,
                        text,
                        bytestring,
                        yaml,
@@ -63,7 +63,8 @@ library
                        mono-traversable,
                        exceptions,
                        opaleye,
-                       product-profunctors
+                       product-profunctors,
+                       stm
 
 
   hs-source-dirs:      src

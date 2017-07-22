@@ -4,53 +4,75 @@
 
 module Shiva.Translation (
   SvenskaPair (..),
-  ShivaResult (..),
+  SentencePair (..),
   runTrans,
   translateSet,
-  translateSentences,
-  prep,
-  prepSep,
-  barDiv,
-  zipWithDefault,
-
-  TransResult (..),
   TransArticle (..),
-  translateArticleText,
 
 ) where
 
 import           Shiva.Config
 -- import Shiva.Database
-import           Control.Monad.Catch   (throwM)
+import           Control.Concurrent.STM.TVar
+import           Control.Monad.Catch         (throwM)
+import Control.Monad.Reader
 import           Control.Monad.State
-import qualified Data.ByteString.Char8 as BSC
-import           Data.List             (intersperse)
-import           Data.MonoTraversable  (omap)
-import           Data.Text             (Text, split)
-import qualified Data.Text             as T
-import           Language.Bing         (BingLanguage (..), translate)
-import           Safe                  (lastMay)
-import           Shiva.Utils           (zipWithDefault)
+import           Data.Text                   (Text)
+import qualified Data.Text                   as T
+import           Translator
 
 
 
 data SvenskaPair = SvenskaPair
-  { swedish :: Text
-  , english :: Text }
+    { swedish :: Text
+    , english :: Text
+    , svBreaks :: [Int]
+    , enBreaks :: [Int]
+    }
 
-data ShivaResult = ShivaResult
-  { success :: Bool
-  , result  :: [SvenskaPair] }
+data SentencePair = SentencePair
+    { svSentence :: Text
+    , enSentence :: Text
+    }
+
+mkSvenskaPair :: Text -> TransItem -> SvenskaPair
+mkSvenskaPair svTxt (TransItem enTxt svB enB) = SvenskaPair svTxt enTxt svB enB
+
+takeBetween :: Int -> Int -> Text -> Text
+takeBetween start end = T.drop start . T.take end
+
+splitter :: Text -> [Int] -> [Text]
+splitter txt []       = [txt]
+splitter txt (n:[])   = [T.drop n txt]
+splitter txt (n:m:ns) = takeBetween n m txt : splitter txt (m:ns)
+
+
+splitSentences :: SvenskaPair -> [SentencePair]
+splitSentences (SvenskaPair sv en svBs enBs) =
+    let svs = splitter sv svBs
+        ens = splitter en enBs in
+    zipWith SentencePair svs ens
+
+
+translateSet :: [Text] -> ShivaM [[SentencePair]]
+translateSet svTxts = do
+    ShivaData {..} <- ask
+    liftIO $ do
+        tdata <- readTVarIO transDataTV
+        ArrayResponse xs <- either throwM pure
+            =<< translateArrayIO tdata Swedish English svTxts
+        unless (length xs == length svTxts) $ throwM Wronglengths
+        pure . map (splitSentences . uncurry mkSvenskaPair) $ zip svTxts xs
+
 
 
 -- | Core translation function. Used only with counter machinery below.
 trans :: Text -> ShivaM Text
 trans sv = do
-  Config {..} <- appConfig
-  mtxt <- liftIO $ translate (BSC.pack clientId) (BSC.pack clientSecret) sv Swedish English
-  case mtxt of
-    Left err -> throwM (TranslationException err)
-    Right en -> return en
+    ShivaData {..} <- ask
+    tdata <- liftIO $ readTVarIO transDataTV
+    mtxt <- liftIO $ translateIO tdata (Just Swedish) English sv
+    either (throwM . MSTranslatorException) pure mtxt
 
 
 ---- Translation with running character count ----
@@ -73,117 +95,8 @@ runTrans = runCounter . shivaTrans
 
 ---- Translating sets of phrases:  Used for feed listings  ----
 
--- Some unnecessary complexity here. Very occassionally the translation eats our separator, '|'.
--- This results in a mismatch in the formed result. In these cases, we use punctuation to separate
--- sentences. While this may not be 100% perfect either, the rate of coincidence of these two
--- potential problems should be very small.
-translateSet' :: [Text] -> ShivaM ShivaResult
-translateSet' svs = do
-  let pstr = prepSet svs
-  en <- runTrans pstr
-  let ens = barDiv en
-  if length svs == length ens
-    then return $ ShivaResult True $ zipWith SvenskaPair svs ens
-    else let ens' = sentences $ T.unwords ens
-         in  return $ ShivaResult (length svs == length ens') $
-               zipWithDefault SvenskaPair "" svs ens'
-
-translateSet :: [Text] -> ShivaM [SvenskaPair]
-translateSet = fmap result . translateSet'
-
-translateSentences :: Text -> ShivaM [SvenskaPair]
-translateSentences = translateSet . prepSep
-
-
-
-data TransResult = TransResult
-  { theresult :: ShivaResult
-  , svTxt     :: Text
-  , enTxt     :: Text }
-
 data TransArticle = TransArticle
-  { thetitle   :: Text
-  , origUrl    :: Text
-  , imageUrl   :: Maybe Text
-  , bodyResult :: ShivaResult }
-
-
-translateArticleText :: Text -> ShivaM TransResult
-translateArticleText sv = do
-  let psv = prep sv
-  pen <- runTrans psv
-  let ens = barDiv pen
-      svs = barDiv psv
-      ens' = sentences $ T.unwords ens
-      r = if length svs == length ens
-          then ShivaResult True $ zipWith SvenskaPair svs ens
-          else ShivaResult (length svs == length ens') $ zipWithDefault SvenskaPair "" svs ens'
-  return $ TransResult r psv pen
-
-
-
----- Preparation I: Prepare a list of phrases for translation ----
-
-
----- Intersperse '|' between phrases ----
-
-prepSet :: [Text] -> Text
-prepSet = mconcat . intersperse " | " . map (omap $ replaceElem '|' '~')
-
-replace :: Char -> Char -> Text -> Text
-replace x y = omap $ replaceElem x y
-
-replaceElem :: Eq a => a -> a -> a -> a
-replaceElem x y z = if z == x then y else z
-
----- Inverse of prepartion: Separate on every occurrence of '|' ----
-
-barDiv :: Text -> [Text]
-barDiv = split (=='|')
-
-barJoin :: [Text] -> Text
-barJoin = mconcat . intersperse " | "
-
-
----- Preparation II: Prepare a body of text, separating into sentences ----
-
--- | Remove any current instances of the '|' character. Then separate into sentences and
---   delineate them with |.
-prepSep :: Text -> [Text]
-prepSep = sentences . replace '|' '~'
-
--- | Remove any current instances of the '|' character. Then separate into sentences and
---   delineate them with |.
-prep :: Text -> Text
-prep = barJoin . prepSep
-
----- Separating by sentence ----
-
-sentences :: Text -> [Text]
-sentences = map T.unwords . sepOn punctuated . T.words
-
-punctuated :: Text -> Bool
-punctuated = mayTest (flip (elem @[]) punctuation) . lastMay . T.unpack
-  where mayTest :: (Char -> Bool) -> Maybe Char -> Bool
-        mayTest p (Just x) = p x
-        mayTest _ Nothing  = False
-
-        punctuation = ".!?"
-
--- Separate list at each occurrence of the predicate-satisfying element.
-sepOn :: (a -> Bool) -> [a] -> [[a]]
-sepOn p l = case sep p l of
-  (xs,[]) -> [xs]
-  (xs,ys) -> xs : sepOn p ys
-
--- Similar to prelude function 'break' except we need to keep predicate-satisfying elements on
--- the end of the first list rather than the start of the second.
-sep :: (a -> Bool) -> [a] -> ([a],[a])
-sep q l = runSep q ([],l)
-  where runSep _ (xs,[])   = (xs,[])
-        runSep p (xs,y:ys) = let z = (xs++[y],ys)
-                             in if p y then z else runSep p z
-
-
--- https://datamarket.azure.com/developer/applications/
--- https://www.microsoft.com/en-us/translator/getstarted.aspx
+    { thetitle   :: Text
+    , origUrl    :: Text
+    , imageUrl   :: Maybe Text
+    , bodyResult :: [SentencePair] }

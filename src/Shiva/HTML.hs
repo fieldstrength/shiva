@@ -103,19 +103,19 @@ renderFeedItem d = do
 
 articlePage :: TransArticle -> Html ()
 articlePage TransArticle {..} = bodyTemplate "Shiva Translate" $ do
-  h2_ $ toHtml thetitle
-  p_ $ do
-    "Translated from "
-    a_ [href_ origUrl] "the original."
-  when (isJust imageUrl) $ do
-    img_ [src_ $ fromJust imageUrl, class_ "articleImg"]
-    br_ []
-    br_ []
-  mapM_ renderPair (result bodyResult)
+    h2_ $ toHtml thetitle
+    p_ $ do
+        "Translated from "
+        a_ [href_ origUrl] "the original."
+    when (isJust imageUrl) $ do
+        img_ [src_ $ fromJust imageUrl, class_ "articleImg"]
+        br_ []
+        br_ []
+    mapM_ renderPair bodyResult
 
-renderPair :: SvenskaPair -> Html ()
+renderPair :: SentencePair -> Html ()
 renderPair sp = do
-  div_ [class_ "svenska"]  (toHtml $ swedish sp)
-  div_ [class_ "engelska"] (toHtml $ english sp)
-  br_ []
-  br_ []
+    div_ [class_ "svenska"]  (toHtml $ svSentence sp)
+    div_ [class_ "engelska"] (toHtml $ enSentence sp)
+    br_ []
+    br_ []
