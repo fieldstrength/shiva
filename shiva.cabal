@@ -80,7 +80,7 @@ executable shiva
   main-is:             Main.hs
 
   build-depends:       shiva,
-                       base            >=4.9  && <4.10,
+                       base            >=4.9  && <4.11,
                        process         >=1.4  && <1.5
 
 

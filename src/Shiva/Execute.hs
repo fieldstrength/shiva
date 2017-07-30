@@ -7,6 +7,13 @@ module Shiva.Execute (
   catchErrorPage,
 ) where
 
+-- initTransDataIO :: SubscriptionKey -> IO (Either TranslatorException TransData)
+-- translateArrayIO :: TransData -> Language -> Language -> [Text] -> IO (Either TranslatorException ArrayResponse)
+-- newtype ArrayResponse = ArrayResponse { getArrayResponse :: [TransItem] }
+{-  data TransItem = TransItem
+        { transText        :: Text
+        , originalBreaks   :: [Int]
+        , translatedBreaks :: [Int]  -}
 
 import Shiva.Config
 import Shiva.Storage
