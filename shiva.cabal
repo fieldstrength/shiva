@@ -81,7 +81,7 @@ executable shiva
 
   build-depends:       shiva,
                        base            >=4.9  && <4.11,
-                       process         >=1.4  && <1.5
+                       process         >=1.4  && <1.7
 
 
   default-language:    Haskell2010

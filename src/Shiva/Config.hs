@@ -2,6 +2,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# OPTIONS_GHC -fno-warn-orphans  #-}
 
 -- | The configuration data type and IO operations to set up, save and load it.
 --   Also aliased for the different layers of the monad transformer stack we employ.
@@ -39,32 +41,35 @@ module Shiva.Config (
 
 ) where
 
-import Paths_shiva                (getDataFileName)
+import           Paths_shiva                 (getDataFileName)
 
-import Control.Applicative        ((<|>))
-import Control.Monad.Catch
-import Control.Monad.Except
-import Control.Monad.Reader
-import Control.Monad.State
-import Control.Concurrent.STM.TVar
-import Data.Bifunctor             (first)
-import Data.ByteString            (writeFile)
-import Data.Char                  (toLower)
-import Data.List                  (isSuffixOf)
-import Data.Maybe                 (fromMaybe)
-import Data.MonoTraversable       (omap)
-import Data.Text                  (Text, intercalate, words, pack)
-import Data.Text.Encoding.Error   (UnicodeException)
-import Data.Yaml.Aeson            (FromJSON, ToJSON, decodeFileEither, encode)
-import Database.PostgreSQL.Simple
-import GHC.Generics               (Generic)
-import Translator
-import Network.HTTP.Conduit       (HttpException)
-import Prelude                    hiding (lookup, words, writeFile)
-import Safe                       (headMay)
-import System.Environment         (lookupEnv)
-import System.Process             (callCommand)
+import           Control.Applicative         ((<|>))
+import           Control.Concurrent.STM.TVar
+import           Control.Monad.Catch
+import           Control.Monad.Except
+import           Control.Monad.Reader
+import           Control.Monad.State
+import           Data.Bifunctor              (first)
+import           Data.ByteString             (writeFile)
+import           Data.Char                   (toLower)
+import           Data.List                   (isSuffixOf)
+import           Data.Maybe                  (fromMaybe)
+import           Data.MonoTraversable        (omap)
+import           Data.Text                   (Text, intercalate, pack, words)
+import           Data.Text.Encoding.Error    (UnicodeException)
+import           Data.Yaml.Aeson             (FromJSON, ToJSON, decodeFileEither, encode)
+import           Database.PostgreSQL.Simple
+import           GHC.Generics                (Generic)
+import           Network.HTTP.Conduit        (HttpException)
+import           Prelude                     hiding (lookup, words, writeFile)
+import           Safe                        (headMay)
+import           System.Environment          (lookupEnv)
+import           System.Process              (callCommand)
+import           Translator
 
+
+deriving instance ToJSON SubscriptionKey
+deriving instance FromJSON SubscriptionKey
 
 -- | Application data saved in a local config file. Information for Microsoft Translator API and
 --   database name and user.
@@ -82,7 +87,6 @@ connectInfo Config {..} = defaultConnectInfo
     { connectUser = dbUser
     , connectDatabase = dbName
     }
-
 
 -- | Data related to a source of news articles accessed via RSS.
 data Source = Source
@@ -208,7 +212,7 @@ enterConfig = do
   muser <- lookupEnv "USER"
   let usr = fromMaybe "" muser
   putStrLn "Enter MS Translator subscription key:"
-  subKey <- pack <$> getLine
+  subKey <- SubKey . pack <$> getLine
   putStrLn "Enter database name (blank = 'shiva'): "
   dbn <- getLine
   let dbname = if null dbn then "shiva" else dbn
