@@ -24,6 +24,7 @@ import Data.Maybe        (fromJust, isJust)
 import Data.Monoid       ((<>))
 import Lucid.Base
 import Lucid.Html5
+import Translator
 
 
 ---- Html Infra ----
@@ -113,9 +114,9 @@ articlePage TransArticle {..} = bodyTemplate "Shiva Translate" $ do
         br_ []
     mapM_ renderPair bodyResult
 
-renderPair :: SentencePair -> Html ()
-renderPair sp = do
-    div_ [class_ "svenska"]  (toHtml $ svSentence sp)
-    div_ [class_ "engelska"] (toHtml $ enSentence sp)
+renderPair :: Sentence -> Html ()
+renderPair s = do
+    div_ [class_ "svenska"]  (toHtml $ fromText s)
+    div_ [class_ "engelska"] (toHtml $ toText s)
     br_ []
     br_ []

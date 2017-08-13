@@ -64,7 +64,8 @@ library
                        exceptions,
                        opaleye,
                        product-profunctors,
-                       stm
+                       stm,
+                       aeson
 
 
   hs-source-dirs:      src

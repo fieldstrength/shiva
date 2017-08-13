@@ -1,6 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# OPTIONS_GHC -fno-warn-orphans  #-}
 
 module Shiva.Translation (
   SvenskaPair (..),
@@ -13,6 +18,8 @@ module Shiva.Translation (
 
 import           Shiva.Config
 -- import Shiva.Database
+import GHC.Generics
+import Data.Aeson
 import           Control.Concurrent.STM.TVar
 import           Control.Monad.Catch         (throwM)
 import Control.Monad.Reader
@@ -20,7 +27,8 @@ import           Control.Monad.State
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
 import           Translator
-
+import Opaleye
+import Database.PostgreSQL.Simple.FromField
 
 
 data SvenskaPair = SvenskaPair
@@ -35,34 +43,14 @@ data SentencePair = SentencePair
     , enSentence :: Text
     }
 
-mkSvenskaPair :: Text -> TransItem -> SvenskaPair
-mkSvenskaPair svTxt (TransItem enTxt svB enB) = SvenskaPair svTxt enTxt svB enB
 
-takeBetween :: Int -> Int -> Text -> Text
-takeBetween start end = T.drop start . T.take end
-
-splitter :: Text -> [Int] -> [Text]
-splitter txt []       = [txt]
-splitter txt (n:[])   = [T.drop n txt]
-splitter txt (n:m:ns) = takeBetween n m txt : splitter txt (m:ns)
-
-
-splitSentences :: SvenskaPair -> [SentencePair]
-splitSentences (SvenskaPair sv en svBs enBs) =
-    let svs = splitter sv svBs
-        ens = splitter en enBs in
-    zipWith SentencePair svs ens
-
-
-translateSet :: [Text] -> ShivaM [[SentencePair]]
+translateSet :: [Text] -> ShivaM [[Sentence]]
 translateSet svTxts = do
     ShivaData {..} <- ask
     liftIO $ do
         tdata <- readTVarIO transDataTV
-        ArrayResponse xs <- either throwM pure
-            =<< translateArrayIO tdata Swedish English svTxts
-        unless (length xs == length svTxts) $ throwM Wronglengths
-        pure . map (splitSentences . uncurry mkSvenskaPair) $ zip svTxts xs
+        translateArraySentencesIO tdata Swedish English svTxts
+            >>= either throwM pure
 
 
 
@@ -79,15 +67,15 @@ trans sv = do
 
 runCounter :: CounterM a -> ShivaM a
 runCounter cm = do
-  (x,_) <- runStateT cm 0
-  -- save translation event record in DB here
-  return x
+    (x,_) <- runStateT cm 0
+    -- save translation event record in DB here
+    return x
 
 shivaTrans :: Text -> CounterM Text
 shivaTrans txt = do
-  let n = T.length txt
-  modify (+n)
-  lift $ trans txt
+    let n = T.length txt
+    modify (+n)
+    lift $ trans txt
 
 runTrans :: Text -> ShivaM Text
 runTrans = runCounter . shivaTrans
@@ -95,8 +83,18 @@ runTrans = runCounter . shivaTrans
 
 ---- Translating sets of phrases:  Used for feed listings  ----
 
+deriving instance ToJSON   Sentence
+deriving instance FromJSON Sentence
+
 data TransArticle = TransArticle
     { thetitle   :: Text
     , origUrl    :: Text
     , imageUrl   :: Maybe Text
-    , bodyResult :: [SentencePair] }
+    , bodyResult :: [Sentence]
+    } deriving (Show, Generic, FromJSON, ToJSON)
+
+instance FromField TransArticle where
+    fromField = fromJSONField
+
+instance QueryRunnerColumnDefault PGJsonb TransArticle where
+    queryRunnerColumnDefault = fieldQueryRunnerColumn

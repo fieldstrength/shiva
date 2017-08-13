@@ -9,6 +9,7 @@ module Shiva.Table.ArticleContent where
 
 import Shiva.Config
 import Shiva.Database             (runDbAction)
+import Shiva.Translation
 
 import Control.Arrow
 import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
@@ -17,38 +18,34 @@ import Data.Time
 import GHC.Generics
 import Opaleye
 
-data ArticleContent' a b c d e
+data ArticleContent' a b c d
     = ArticleContent
     { urlFrag     :: a
-    , svBody      :: b
-    , enBody      :: c
-    , createdAt   :: d
-    , updatedAt :: e
+    , content     :: b
+    , createdAt   :: c
+    , updatedAt   :: d
     } deriving (Show, Eq, Ord, Generic)
 
 $(makeAdaptorAndInstance "pArticleContent" ''ArticleContent')
 
-type ArticleContent = ArticleContent' Text Text Text UTCTime UTCTime
+type ArticleContent = ArticleContent' Text TransArticle UTCTime UTCTime
 
-type ArticleContentIn = ArticleContent' Text Text Text () ()
+type ArticleContentIn = ArticleContent' Text TransArticle () ()
 
 type ArticleContentR = ArticleContent' (Column PGText)
-                                       (Column PGText)
-                                       (Column PGText)
+                                       (Column PGJsonb)
                                        (Column PGTimestamptz)
                                        (Column PGTimestamptz)
 
 type ArticleContentW = ArticleContent' (Column PGText)
-                                       (Column PGText)
-                                       (Column PGText)
+                                       (Column PGJsonb)
                                        (Maybe (Column PGTimestamptz))
                                        (Maybe (Column PGTimestamptz))
 
 toW :: ArticleContentIn -> ArticleContentW
 toW x = ArticleContent
     { urlFrag   = pgStrictText (urlFrag x)
-    , svBody    = pgStrictText (svBody x)
-    , enBody    = pgStrictText (enBody x)
+    , content   = pgValueJSONB (content x)
     , createdAt = Nothing
     , updatedAt = Nothing
     }
@@ -56,8 +53,7 @@ toW x = ArticleContent
 table :: Table ArticleContentW ArticleContentR
 table = Table "article_metadata" $ pArticleContent ArticleContent
     { urlFrag    = required "url_fragment"
-    , svBody     = required "sv_body"
-    , enBody     = required "en_body"
+    , content    = required "content"
     , createdAt  = optional "created_at"
     , updatedAt  = optional "updated_at"
     }

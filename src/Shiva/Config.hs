@@ -74,10 +74,10 @@ deriving instance FromJSON SubscriptionKey
 -- | Application data saved in a local config file. Information for Microsoft Translator API and
 --   database name and user.
 data ShivaConfig = Config
-  { translatorSubKey :: SubscriptionKey
-  , dbName           :: String
-  , dbUser           :: String
-  } deriving (Show, Generic)
+    { translatorSubKey :: SubscriptionKey
+    , dbName           :: String
+    , dbUser           :: String
+    } deriving (Show, Generic)
 
 instance FromJSON ShivaConfig
 instance ToJSON ShivaConfig
@@ -90,10 +90,10 @@ connectInfo Config {..} = defaultConnectInfo
 
 -- | Data related to a source of news articles accessed via RSS.
 data Source = Source
-  { sourceTitle      :: Text
-  , feedUrl          :: String
-  , contentExtractor :: Text -> Text
-  , imageExtractor   :: Text -> Maybe Text }
+    { sourceTitle      :: Text
+    , feedUrl          :: String
+    , contentExtractor :: Text -> Text
+    , imageExtractor   :: Text -> Maybe Text }
 
 
 -- | The representation of the source title used in the corresponding URL (lowercase, dash-separated).
