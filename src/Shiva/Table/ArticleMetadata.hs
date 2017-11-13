@@ -17,8 +17,7 @@ import Data.Time
 import GHC.Generics
 import Opaleye
 
-data ArticleMetadata' a b c d e f g h
-    = ArticleMetadata
+data ArticleMetadata' a b c d e f g h = ArticleMetadata
     { itemTime   :: a
     , sourceName :: b
     , svTitle    :: c

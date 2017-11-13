@@ -8,10 +8,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 
 module Shiva.Translation (
-  SvenskaPair (..),
-  SentencePair (..),
   runTrans,
   translateSet,
+  translateSentences,
   TransArticle (..),
 
 ) where
@@ -31,27 +30,21 @@ import Opaleye
 import Database.PostgreSQL.Simple.FromField
 
 
-data SvenskaPair = SvenskaPair
-    { swedish :: Text
-    , english :: Text
-    , svBreaks :: [Int]
-    , enBreaks :: [Int]
-    }
-
-data SentencePair = SentencePair
-    { svSentence :: Text
-    , enSentence :: Text
-    }
-
-
-translateSet :: [Text] -> ShivaM [[Sentence]]
-translateSet svTxts = do
+translateSentences :: [Text] -> ShivaM [[Sentence]]
+translateSentences svTxts = do
     ShivaData {..} <- ask
     liftIO $ do
         tdata <- readTVarIO transDataTV
         translateArraySentencesIO tdata Swedish English svTxts
             >>= either throwM pure
 
+translateSet :: [Text] -> ShivaM [TransItem]
+translateSet svTxts = do
+    ShivaData {..} <- ask
+    liftIO $ do
+        tdata <- readTVarIO transDataTV
+        translateArrayIO tdata Swedish English svTxts
+            >>= either throwM (pure . getArrayResponse)
 
 
 -- | Core translation function. Used only with counter machinery below.
@@ -87,10 +80,11 @@ deriving instance ToJSON   Sentence
 deriving instance FromJSON Sentence
 
 data TransArticle = TransArticle
-    { thetitle   :: Text
-    , origUrl    :: Text
-    , imageUrl   :: Maybe Text
-    , bodyResult :: [Sentence]
+    { thetitle    :: Text
+    , origUrl     :: Text
+    , urlFragment :: Text
+    , imageUrl    :: Maybe Text
+    , bodyResult  :: [Sentence]
     } deriving (Show, Generic, FromJSON, ToJSON)
 
 instance FromField TransArticle where

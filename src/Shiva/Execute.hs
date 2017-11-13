@@ -30,6 +30,8 @@ import Data.Map            (Map, fromList, lookup)
 import Data.Text           (Text, empty)
 import Lucid
 import Prelude             hiding (lookup)
+import Translator
+
 
 readMetadataMap :: Source -> ShivaM (Map Text Text)
 readMetadataMap = fmap fromList . readMetaPairs
@@ -46,8 +48,8 @@ subMetadata m = foldr (subStep m) ([],[])
 -- | Take list of feed items without english titles, fill them in by translating the swedish titles.
 translateTitles :: [FeedItem] -> ShivaM [FeedItem]
 translateTitles ds = do
-  ps <- translateSet $ svTitle <$> ds
-  pure $ zipWith (\d p -> d {enTitle = english p }) ds ps
+    ps <- translateSet $ svTitle <$> ds
+    pure $ zipWith (\d p -> d {enTitle = transText p }) ds ps
 
 loadFeedData :: Source -> ShivaM FeedData
 loadFeedData src = do
@@ -72,22 +74,22 @@ catchErrorPage :: ShivaM (Html ()) -> ShivaM (Html ())
 catchErrorPage = flip catchAll (pure . errorPage . show)
 
 
--- | Given swedish and english text separated by |, return the corresponding ShivaResult
-genResult :: Text -> Text -> ShivaResult
-genResult sv en =
-  let svs = barDiv sv
-      ens = barDiv en
-      ps  = zipWithDefault SvenskaPair empty svs ens
-  in ShivaResult (length svs == length ens) ps
+-- -- | Given swedish and english text separated by |, return the corresponding ShivaResult
+-- genResult :: Text -> Text -> ShivaResult
+-- genResult sv en =
+--   let svs = barDiv sv
+--       ens = barDiv en
+--       ps  = zipWithDefault SvenskaPair empty svs ens
+--   in ShivaResult (length svs == length ens) ps
 
 
 -- | Take an URL fragment (functioning as an identifier) and text, then translate the text,
 --   save the result to the database, and return it.
-translateSaveBodyText :: Text -> Text -> ShivaM ShivaResult
-translateSaveBodyText ufrag sv' = do
-    TransResult result sv en <- translateArticleText sv'
-    writeContent ufrag sv en
-    pure result
+--translateSaveBodyText :: Text -> Text -> ShivaM ShivaResult
+--translateSaveBodyText ufrag sv' = do
+--    -- TransResult result sv en <- translateArticleText sv'
+--    writeContent _  -- ufrag sv en
+--    pure result
 
 retrieveAndExtract :: FeedItem -> ShivaM TransArticle
 retrieveAndExtract FeedItem {..} = do

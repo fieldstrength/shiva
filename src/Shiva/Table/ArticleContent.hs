@@ -30,8 +30,6 @@ $(makeAdaptorAndInstance "pArticleContent" ''ArticleContent')
 
 type ArticleContent = ArticleContent' Text TransArticle UTCTime UTCTime
 
-type ArticleContentIn = ArticleContent' Text TransArticle () ()
-
 type ArticleContentR = ArticleContent' (Column PGText)
                                        (Column PGJsonb)
                                        (Column PGTimestamptz)
@@ -42,10 +40,10 @@ type ArticleContentW = ArticleContent' (Column PGText)
                                        (Maybe (Column PGTimestamptz))
                                        (Maybe (Column PGTimestamptz))
 
-toW :: ArticleContentIn -> ArticleContentW
+toW :: TransArticle -> ArticleContentW
 toW x = ArticleContent
-    { urlFrag   = pgStrictText (urlFrag x)
-    , content   = pgValueJSONB (content x)
+    { urlFrag   = pgStrictText (urlFragment x)
+    , content   = pgValueJSONB x
     , createdAt = Nothing
     , updatedAt = Nothing
     }
@@ -61,7 +59,7 @@ table = Table "article_metadata" $ pArticleContent ArticleContent
 queryAll :: Query ArticleContentR
 queryAll = queryTable table
 
-insert :: [ArticleContentIn] -> ShivaM Int
+insert :: [TransArticle] -> ShivaM Int
 insert xs = fmap fromIntegral . runDbAction $ \conn ->
     runInsertMany conn table (toW <$> xs)
 
