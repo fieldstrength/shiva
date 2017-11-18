@@ -18,8 +18,7 @@ import Data.Time
 import GHC.Generics
 import Opaleye
 
-data ArticleContent' a b c d
-    = ArticleContent
+data ArticleContent' a b c d = ArticleContent
     { urlFrag     :: a
     , content     :: b
     , createdAt   :: c
@@ -49,7 +48,7 @@ toW x = ArticleContent
     }
 
 table :: Table ArticleContentW ArticleContentR
-table = Table "article_metadata" $ pArticleContent ArticleContent
+table = Table "article_content" $ pArticleContent ArticleContent
     { urlFrag    = required "url_fragment"
     , content    = required "content"
     , createdAt  = optional "created_at"

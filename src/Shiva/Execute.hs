@@ -1,19 +1,11 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 -- | Assembles functionality from several modules to perform main business logic.
 module Shiva.Execute (
-  loadFeedByTitleCode,
-  generateResultFromName,
-  catchErrorPage,
+    loadFeedByTitleCode,
+    generateResultFromName,
+    catchErrorPage,
 ) where
-
--- initTransDataIO :: SubscriptionKey -> IO (Either TranslatorException TransData)
--- translateArrayIO :: TransData -> Language -> Language -> [Text] -> IO (Either TranslatorException ArrayResponse)
--- newtype ArrayResponse = ArrayResponse { getArrayResponse :: [TransItem] }
-{-  data TransItem = TransItem
-        { transText        :: Text
-        , originalBreaks   :: [Int]
-        , translatedBreaks :: [Int]  -}
 
 import Shiva.Config
 import Shiva.Storage
@@ -74,51 +66,32 @@ catchErrorPage :: ShivaM (Html ()) -> ShivaM (Html ())
 catchErrorPage = flip catchAll (pure . errorPage . show)
 
 
--- -- | Given swedish and english text separated by |, return the corresponding ShivaResult
--- genResult :: Text -> Text -> ShivaResult
--- genResult sv en =
---   let svs = barDiv sv
---       ens = barDiv en
---       ps  = zipWithDefault SvenskaPair empty svs ens
---   in ShivaResult (length svs == length ens) ps
-
-
--- | Take an URL fragment (functioning as an identifier) and text, then translate the text,
---   save the result to the database, and return it.
---translateSaveBodyText :: Text -> Text -> ShivaM ShivaResult
---translateSaveBodyText ufrag sv' = do
---    -- TransResult result sv en <- translateArticleText sv'
---    writeContent _  -- ufrag sv en
---    pure result
-
 retrieveAndExtract :: FeedItem -> ShivaM TransArticle
-retrieveAndExtract FeedItem {..} = do
-  txt <- ShivaM <$> lift $ httpGet urlFull
-  msrc <- srcLookup sourceName
-  case msrc of
-    Nothing -> throwM $ UnknownSourceName sourceName
-    Just Source {..} -> do
-      let contentTxt = contentExtractor txt
-          img        = imageExtractor   txt
-      r <- translateSaveBodyText urlFrag contentTxt
-      pure $ TransArticle svTitle urlFull img r
+retrieveAndExtract FeedItem {sourceName, urlFrag, urlFull, svTitle} = do
+    txt <- ShivaM <$> lift $ httpGet urlFull
+    msrc <- srcLookup sourceName
+    case msrc of
+        Nothing -> throwM $ UnknownSourceName sourceName
+        Just Source {contentExtractor, imageExtractor, sourceTitle} -> do
+            let contentTxt = contentExtractor txt
+                img        = imageExtractor   txt
+            [ss] <- translateSentences [contentTxt]
+            pure $ TransArticle svTitle urlFull urlFrag img ss
 
 
 generateContentResult :: FeedItem -> ShivaM TransArticle
-generateContentResult fi@FeedItem {..} = do
-  mx <- readContent urlFrag
-  case mx of
-    Nothing   -> retrieveAndExtract fi
-    Just (_, svBody, enBody) -> pure $
-        TransArticle svTitle urlFull Nothing $
-            genResult svBody enBody
+generateContentResult fi@FeedItem {urlFrag} = do
+    mx <- readContent urlFrag
+    case mx of
+        Nothing -> retrieveAndExtract fi
+        Just ta -> pure ta
 
 
 -- | Used to generate a web page for an article, identified by a part of a URL. This relies on the
 --   article metadata already being in the database, due to its appearing in an RSS listing page.
 generateResultFromName :: Text -> ShivaM TransArticle
 generateResultFromName urlfrag = do
-  md <- readMetadata urlfrag
-  case md of
-    Just d  -> generateContentResult d
-    Nothing -> throwM $ MissingArticle urlfrag
+    md <- readMetadata urlfrag
+    case md of
+        Just d  -> generateContentResult d
+        Nothing -> throwM $ MissingArticle urlfrag

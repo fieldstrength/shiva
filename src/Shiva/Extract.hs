@@ -30,7 +30,8 @@ dropScript ts = before ++ (dropScript . snd . sepClosed) after
 -- Separate list into elements before and after the first predicate-satisfying element
 sep :: (a -> Bool) -> [a] -> ([a],[a])
 sep q l = runSep q ([],l)
-  where runSep _ (xs,[])   = (reverse xs,[])
+    where
+        runSep _ (xs,[])   = (reverse xs,[])
         runSep p (xs,y:ys) = if p y then (reverse xs,ys) else runSep p (y:xs,ys)
 
 
@@ -57,12 +58,13 @@ divOpenWithClass :: StringLike a => a -> Tag a -> Bool
 divOpenWithClass i = tagOpenAttrLit "div" ("class",i)
 
 extractDivClass :: StringLike a => a -> a -> a
-extractDivClass i = innerText
-                  . takeContentTags 1
-                  . dropScript
-                  . tailSafe
-                  . dropWhile (not . divOpenWithClass i)
-                  . parseTags
+extractDivClass i
+    = innerText
+    . takeContentTags 1
+    . dropScript
+    . tailSafe
+    . dropWhile (not . divOpenWithClass i)
+    . parseTags
 
 -----
 
@@ -70,10 +72,11 @@ prepTags :: StringLike a => a -> [Tag a]
 prepTags = dropScript . parseTags
 
 extractDivTextWithClass :: StringLike a => a -> [Tag a] -> a
-extractDivTextWithClass i = innerText
-                          . takeContentTags 1
-                          . tailSafe
-                          . dropWhile (not . divOpenWithClass i)
+extractDivTextWithClass i
+    = innerText
+    . takeContentTags 1
+    . tailSafe
+    . dropWhile (not . divOpenWithClass i)
 
 extractDivText :: StringLike a => [a] -> a -> a
 extractDivText ids str = strConcat $ extractDivTextWithClass <$> ids <*> [prepTags str]
@@ -85,10 +88,11 @@ imgWithClass :: StringLike a => a -> Tag a -> Bool
 imgWithClass c = tagOpenAttrLit "img" ("class",c)
 
 extractImgUrl :: Text -> Text -> Maybe Text
-extractImgUrl c = headMay
-                . map (fromAttrib "src")
-                . filter (imgWithClass c)
-                . prepTags
+extractImgUrl c
+    = headMay
+    . map (fromAttrib "src")
+    . filter (imgWithClass c)
+    . prepTags
 
 dropParams :: Text -> Text
 dropParams = takeWhile (/= '?')

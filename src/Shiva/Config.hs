@@ -218,8 +218,10 @@ enterConfig = do
   let dbname = if null dbn then "shiva" else dbn
   if null usr then putStrLn "Enter database user name: "
               else putStrLn $ "Enter database user name (blank = '" ++ usr ++ "')"
-  dbuser <- getLine
-  pure $ Config subKey dbname dbuser
+  usrIn <- getLine
+  let dbUser | null usrIn = usr
+             | otherwise  = usrIn
+  pure $ Config subKey dbname dbUser
 
 yesOrNo :: IO Bool
 yesOrNo = do

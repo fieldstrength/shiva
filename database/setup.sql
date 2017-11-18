@@ -14,8 +14,7 @@ CREATE TABLE article_metadata
 
 CREATE TABLE article_content
     ( url_fragment  TEXT UNIQUE NOT NULL REFERENCES article_metadata (url_fragment)
-    , en_body       TEXT NOT NULL
-    , sv_body       TEXT NOT NULL
+    , content       JSONB NOT NULL
     , created_at    TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
     , updated_at    TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
     );
