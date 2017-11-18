@@ -99,19 +99,3 @@ dropParams = takeWhile (/= '?')
 
 extractImgUrl_noParams :: Text -> Text -> Maybe Text
 extractImgUrl_noParams c = fmap dropParams . extractImgUrl c
-
-
-
-{-
-parseTags :: StringLike str => str -> [Tag str]
--- | Extract all text content from tags (similar to Verbatim found in HaXml)
-innerText :: StringLike str => [Tag str] -> str
-innerText = strConcat . mapMaybe maybeTagText
-
--- | Extract the string from within 'TagText', otherwise 'Nothing'
-maybeTagText :: Tag str -> Maybe str
-maybeTagText (TagText x) = Just x
-maybeTagText _           = Nothing
-
-getTagContent :: Eq str => str -> ([Attribute str] -> Bool) -> [Tag str] -> [Tag str]
--}

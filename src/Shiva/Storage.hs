@@ -1,17 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Shiva.Storage where
 
-import Shiva.Config
-import Shiva.Feeds
-import qualified Shiva.Table.ArticleContent as Content
+import           Shiva.Config
+import           Shiva.Feeds
+import qualified Shiva.Table.ArticleContent  as Content
 import qualified Shiva.Table.ArticleMetadata as Meta
-import Shiva.Translation
+import           Shiva.Translation
 
-import Control.Monad              (void)
-import Data.Text                  (Text) -- , pack, unpack)
-import Safe                       (headMay)
+import           Control.Monad               (void)
+import           Data.Text                   (Text)
+import           Safe                        (headMay)
 
 
 fromItem :: FeedItem -> Meta.ArticleMetadataIn

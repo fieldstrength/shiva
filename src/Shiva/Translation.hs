@@ -1,33 +1,33 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE MultiParamTypeClasses     #-}
-{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 
 module Shiva.Translation (
-  runTrans,
-  translateSet,
-  translateSentences,
-  TransArticle (..),
+    runTrans,
+    translateSet,
+    translateSentences,
+    TransArticle (..),
 
 ) where
 
 import           Shiva.Config
--- import Shiva.Database
-import GHC.Generics
-import Data.Aeson
+
 import           Control.Concurrent.STM.TVar
-import           Control.Monad.Catch         (throwM)
-import Control.Monad.Reader
+import           Control.Monad.Catch                  (throwM)
+import           Control.Monad.Reader
 import           Control.Monad.State
-import           Data.Text                   (Text)
-import qualified Data.Text                   as T
+import           Data.Aeson
+import           Data.Text                            (Text)
+import qualified Data.Text                            as T
+import           Database.PostgreSQL.Simple.FromField
+import           GHC.Generics
+import           Opaleye
 import           Translator
-import Opaleye
-import Database.PostgreSQL.Simple.FromField
 
 
 translateSentences :: [Text] -> ShivaM [[Sentence]]

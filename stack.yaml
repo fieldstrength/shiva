@@ -5,6 +5,6 @@ packages:
 - .
 - location:
     git: https://github.com/BlackBrane/microsoft-translator/
-    commit: 9c463eb171283ae01002755fd6395cde7535f3c5
+    commit: 399cf0f65ac9093d959c50e86b7a5d7dcbae8441
   extra-dep: true
 extra-deps: []

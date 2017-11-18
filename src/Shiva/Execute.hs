@@ -8,18 +8,18 @@ module Shiva.Execute (
 ) where
 
 import Shiva.Config
-import Shiva.Storage
 import Shiva.Feeds
 import Shiva.Get           (httpGet)
 import Shiva.HTML
+import Shiva.Storage
 import Shiva.Translation
 
 import Control.Monad.Catch (catchAll, throwM)
-import Control.Monad.State (lift)
+import Control.Monad.State (lift, liftIO)
 import Data.Bifunctor      (first, second)
 import Data.List           (sortBy)
 import Data.Map            (Map, fromList, lookup)
-import Data.Text           (Text, empty)
+import Data.Text           (Text)
 import Lucid
 import Prelude             hiding (lookup)
 import Translator
@@ -30,8 +30,8 @@ readMetadataMap = fmap fromList . readMetaPairs
 
 subStep :: Map Text Text -> FeedItem -> ([FeedItem],[FeedItem]) -> ([FeedItem],[FeedItem])
 subStep m i = case lookup (svTitle i) m of
-  Just eng -> first  (d:) where d = i {enTitle = eng}
-  Nothing  -> second (i:)
+    Just eng -> first  (d:) where d = i {enTitle = eng}
+    Nothing  -> second (i:)
 
 subMetadata :: Map Text Text -> [FeedItem] -> ([FeedItem],[FeedItem])
 subMetadata m = foldr (subStep m) ([],[])
@@ -45,20 +45,20 @@ translateTitles ds = do
 
 loadFeedData :: Source -> ShivaM FeedData
 loadFeedData src = do
-  fd <- ShivaM <$> lift $ loadFeedPrelim src
-  m  <- readMetadataMap src
-  let (xs,ys) = subMetadata m (feedItems fd)
-  zs <- translateTitles ys
-  writeMetadata zs
-  pure $ fd { feedItems = sortBy (flip compare) (xs ++ zs) }
+    fd <- ShivaM <$> lift $ loadFeedPrelim src
+    m  <- readMetadataMap src
+    let (xs,ys) = subMetadata m (feedItems fd)
+    zs <- translateTitles ys
+    writeMetadata zs
+    pure $ fd { feedItems = sortBy (flip compare) (xs ++ zs) }
 
 -- | Load the RSS feed page for a given 'Source' by specifying it's 'titleCode'.
 loadFeedByTitleCode :: Text -> ShivaM FeedData
 loadFeedByTitleCode code = do
-  msrc <- codeLookup code
-  case msrc of
-    Just src -> loadFeedData src
-    Nothing  -> throwM $ UnknownFeed code
+    msrc <- codeLookup code
+    case msrc of
+        Just src -> loadFeedData src
+        Nothing  -> throwM $ UnknownFeed code
 
 
 -- | If an error is encountered in the ShivaM monad, report the error with a webpage.
@@ -72,10 +72,11 @@ retrieveAndExtract FeedItem {sourceName, urlFrag, urlFull, svTitle} = do
     msrc <- srcLookup sourceName
     case msrc of
         Nothing -> throwM $ UnknownSourceName sourceName
-        Just Source {contentExtractor, imageExtractor, sourceTitle} -> do
+        Just Source {contentExtractor, imageExtractor} -> do
             let contentTxt = contentExtractor txt
                 img        = imageExtractor   txt
             [ss] <- translateSentences [contentTxt]
+            liftIO $ putStrLn $ "MS Translator result: " ++ show ss
             pure $ TransArticle svTitle urlFull urlFrag img ss
 
 

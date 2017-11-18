@@ -19,10 +19,10 @@ import GHC.Generics
 import Opaleye
 
 data ArticleContent' a b c d = ArticleContent
-    { urlFrag     :: a
-    , content     :: b
-    , createdAt   :: c
-    , updatedAt   :: d
+    { urlFrag   :: a
+    , content   :: b
+    , createdAt :: c
+    , updatedAt :: d
     } deriving (Show, Eq, Ord, Generic)
 
 $(makeAdaptorAndInstance "pArticleContent" ''ArticleContent')

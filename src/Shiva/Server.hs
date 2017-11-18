@@ -43,29 +43,29 @@ getStaticPath = getDataFileName "static"
 
 server :: FilePath -> ShivaData -> IO ()
 server staticPath d = scotty 7777 $ do
-  middleware $ staticPolicy (noDots >-> addBase staticPath)
+    middleware $ staticPolicy (noDots >-> addBase staticPath)
 
-  get "/" $ html . renderText $ mainPage
+    get "/" $ html . renderText $ mainPage
 
-  get "/sources/:x" $ do
-    x <- param "x"
-    html =<< renderText <$> liftIO (generateFeedPage d x)
+    get "/sources/:x" $ do
+        x <- param "x"
+        html =<< renderText <$> liftIO (generateFeedPage d x)
 
-  get "/content/dn/:x" $ do
-    x <- param "x"
-    html =<< renderText <$> liftIO (generateContentPage d x)
+    get "/content/dn/:x" $ do
+        x <- param "x"
+        html =<< renderText <$> liftIO (generateContentPage d x)
 
 
 -- | Run the server (as an installed executable).
 runServer :: [Source] -> IO ()
 runServer srcs = do
-  path <- getStaticPath
-  mconf <- runExceptT (loadEverything srcs)
-  case mconf of
-    Right conf -> server path conf
-    Left err   -> do
-      putStrLn "No valid config file found. Try running 'shiva setup' first."
-      putStrLn $ "Details: " ++ err
+    path <- getStaticPath
+    mconf <- runExceptT (loadEverything srcs)
+    case mconf of
+        Right conf -> server path conf
+        Left err   -> do
+            putStrLn "No valid config file found. Try running 'shiva setup' first."
+            putStrLn $ "Details: " ++ err
 
 -- | Run the server (from within ghci). Uses the repo's 'static' path instead of one
 --   set up by Stack or Cabal. Useful for testing out changes in styling or other static aspects.

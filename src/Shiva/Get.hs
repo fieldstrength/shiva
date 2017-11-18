@@ -11,6 +11,6 @@ import Network.HTTP.Conduit (simpleHttp)
 
 httpGet :: Text -> IO Text
 httpGet url = do
-  mbs <- try . simpleHttp $ unpack url
-  bs <- either (throwM . NetworkException) pure mbs
-  either (throwM . TextException) pure $ decodeUtf8' (toStrict bs)
+    mbs <- try . simpleHttp $ unpack url
+    bs <- either (throwM . NetworkException) pure mbs
+    either (throwM . TextException) pure $ decodeUtf8' (toStrict bs)
