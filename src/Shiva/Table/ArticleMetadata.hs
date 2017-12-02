@@ -7,15 +7,18 @@
 
 module Shiva.Table.ArticleMetadata where
 
-import Shiva.Config
-import Shiva.Database             (runDbAction)
+import           Shiva.Config
+import           Shiva.Database             (runDbAction)
 
-import Control.Arrow
-import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
-import Data.Text                  (Text)
-import Data.Time
-import GHC.Generics
-import Opaleye
+import           Control.Arrow
+import           Control.Monad
+import           Data.Profunctor.Product.TH (makeAdaptorAndInstance)
+import           Data.Text                  (Text)
+import           Data.Time
+import           Database.PostgreSQL.Simple (Connection)
+import           GHC.Generics
+import           Opaleye                    hiding (null)
+
 
 data ArticleMetadata' a b c d e f g h = ArticleMetadata
     { itemTime   :: a
@@ -79,16 +82,25 @@ table = Table "article_metadata" $ pArticleMetadata ArticleMetadata
 queryAll :: Query ArticleMetadataR
 queryAll = queryTable table
 
-insert :: [ArticleMetadataIn] -> ShivaM Int
-insert xs = fmap fromIntegral . runDbAction $ \conn ->
-    runInsertMany conn table (toW <$> xs)
+query :: Text -> Query ArticleMetadataR
+query frag = proc () -> do
+    x <- queryAll -< ()
+    restrict -< urlFrag x .=== pgStrictText frag
+    returnA -< x
+
+runArticleQuery :: Connection -> Text -> IO [ArticleMetadata]
+runArticleQuery conn = runQuery conn . query
+
+insert :: [ArticleMetadataIn] -> ShivaM ()
+insert xs = runDbAction $ \conn ->
+    forM_ xs $ \x -> do
+        missing <- null <$> runArticleQuery conn (urlFrag x)
+        when missing . void $
+            runInsertMany conn table [toW x]
 
 get :: Text -> ShivaM [ArticleMetadata]
 get frag = runDbAction $ \conn ->
-    runQuery conn $ proc () -> do
-        x <- queryAll -< ()
-        restrict -< urlFrag x .=== pgStrictText frag
-        returnA -< x
+    runQuery conn $ query frag
 
 getPairs :: Text -> ShivaM [(Text, Text)]
 getPairs src = runDbAction $ \conn ->
