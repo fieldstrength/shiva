@@ -12,7 +12,10 @@ import Data.Text     (Text)
 
 
 extractDN :: Text -> Text
-extractDN = extractDivText ["article__body-grid-item article__lead", "article__body-content"]
+extractDN = extractDivText
+    [ "article__lead"
+    , "article__body-grid-item article__lead" -- this one obselete ?
+    , "article__body-content" ]
 
 extractDNImage :: Text -> Maybe Text
 extractDNImage = extractImgUrl_noParams "image-box__img image-box__img--fallback"

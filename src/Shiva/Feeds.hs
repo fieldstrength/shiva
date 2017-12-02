@@ -1,30 +1,32 @@
-{-# LANGUAGE RecordWildCards, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Shiva.Feeds (
-  FeedData (..),
-  FeedItem (..),
-  showTime,
-  parseTime,
-  unsafeParseTime,
-  loadFeedPrelim,
+    FeedData (..),
+    FeedItem (..),
+    showTime,
+    parseTime,
+    unsafeParseTime,
+    loadFeedPrelim,
 ) where
 
 import Shiva.Config
-import Shiva.Utils                (nothingMsg, separate)
-import Shiva.Get                  (httpGet)
+import Shiva.Get            (httpGet)
+import Shiva.Utils          (nothingMsg, separate)
 
-import Safe                       (headMay, lastMay)
-import Control.Monad              ((<=<))
-import Data.Maybe                 (fromJust, catMaybes)
-import Text.XML.Light.Lexer       (XmlSource)
-import Text.XML.Light.Input       (parseXMLDoc)
-import Text.RSS.Import            (elementToRSS)
-import Text.RSS.Syntax            (RSS (..), RSSItem (..), RSSChannel (..))
-import Control.Monad.Error.Class  (throwError)
-import Data.Time.Format           (readSTime, formatTime)
-import Data.Time                  (UTCTime, defaultTimeLocale)
-import Data.Either                (rights, lefts)
-import Data.Text                  (Text, pack, unpack)
+import Control.Monad        ((<=<))
+import Control.Monad.Catch  (throwM)
+import Data.Either          (lefts, rights)
+import Data.Maybe           (catMaybes, fromJust)
+import Data.Text            (Text, pack)
+import Data.Time            (UTCTime, defaultTimeLocale)
+import Data.Time.Format     (formatTime, readSTime)
+import Safe                 (headMay, lastMay)
+import Text.RSS.Import      (elementToRSS)
+import Text.RSS.Syntax      (RSS (..), RSSChannel (..), RSSItem (..))
+import Text.XML.Light.Input (parseXMLDoc)
+import Text.XML.Light.Lexer (XmlSource)
+
 
 -- | RSS date format used by DN News feed.
 --   for reference:
@@ -55,55 +57,53 @@ showTime = formatTime defaultTimeLocale timeFormat2
 
 ---- Retrieving RSS ----
 
-type Err = Either String
+interpRSS :: XmlSource s => s -> Maybe RSS
+interpRSS = elementToRSS <=< parseXMLDoc
 
-
-interpRSS :: XmlSource s => s -> Err RSS
-interpRSS = nothingMsg "Problem interpreting feed XML." . (elementToRSS <=< parseXMLDoc)
-
-loadRSS :: Text -> IOX RSS
+loadRSS :: Text -> IO RSS
 loadRSS url = do
-  mrss <- interpRSS <$> httpGet url
-  case mrss of
-    Left er -> throwError er
-    Right r -> return r
+    mRss <- interpRSS <$> httpGet url
+    case mRss of
+        Nothing  -> throwM $ PraseRSSFeedException "Couldn't parse RSS feed XML"
+        Just rss -> pure rss
 
 
 ----
 
-
 data FeedItem = FeedItem
-  { itemTime :: UTCTime
-  , sourceName :: Text
-  , svTitle :: Text
-  , enTitle :: Text
-  , urlFrag :: Text
-  , urlFull :: Text } deriving (Show,Eq,Ord)
+    { itemTime   :: UTCTime
+    , sourceName :: Text
+    , svTitle    :: Text
+    , enTitle    :: Text
+    , urlFrag    :: Text
+    , urlFull    :: Text } deriving (Show, Eq, Ord)
 
 data FeedData = FeedData
-   { feedItems :: [FeedItem]
-   , invalidItems :: [String] } deriving Show
+    { feedItems    :: [FeedItem]
+    , invalidItems :: [String] } deriving Show
 
 
 extractRSSItems :: RSS -> [RSSItem]
 extractRSSItems = rssItems . rssChannel
 
-mkPrelim :: Text -> RSSItem -> Err FeedItem
-mkPrelim srcName RSSItem {..} = FeedItem
-  <$> nothingMsg "Date invalid or missing" (rssItemPubDate >>= parseTime)
-  <*> pure srcName
-  <*> nothingMsg "Title invalid or missing" (pack <$> rssItemTitle)
-  <*> pure ""
-  <*> linkMsg (fmap pack $ rssItemLink >>= extractURLFrag)
-  <*> linkMsg (pack <$> rssItemLink)
-    where linkMsg = nothingMsg "Link invalid or missing"
-          extractURLFrag = lastMay . separate '/'
+mkPrelim :: Text -> RSSItem -> Either String FeedItem
+mkPrelim srcName RSSItem {..} =
+    FeedItem
+        <$> nothingMsg "Date invalid or missing" (rssItemPubDate >>= parseTime)
+        <*> pure srcName
+        <*> nothingMsg "Title invalid or missing" (pack <$> rssItemTitle)
+        <*> pure ""
+        <*> linkMsg (fmap pack $ rssItemLink >>= extractURLFrag)
+        <*> linkMsg (pack <$> rssItemLink)
+    where
+        linkMsg        = nothingMsg "Link invalid or missing"
+        extractURLFrag = lastMay . separate '/'
 
 
-loadItems :: Text -> Text -> IOX [Err FeedItem]
+loadItems :: Text -> Text -> IO [Either String FeedItem]
 loadItems name url = map (mkPrelim name) . extractRSSItems <$> loadRSS url
 
-loadFeedPrelim :: Source -> IOX FeedData
+loadFeedPrelim :: Source -> IO FeedData
 loadFeedPrelim Source {..} = do
-  mxs <- loadItems sourceTitle (pack feedUrl)
-  return $ FeedData (rights mxs) (lefts mxs)
+    mxs <- loadItems sourceTitle (pack feedUrl)
+    pure $ FeedData (rights mxs) (lefts mxs)

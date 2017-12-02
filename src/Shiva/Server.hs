@@ -2,33 +2,31 @@
 
 module Shiva.Server (
   runServer,
-  test
+  testServer
 ) where
 
-import Shiva.HTML
-import Shiva.Execute
-import Shiva.Config
-import Shiva.Sources
 import Paths_shiva                   (getDataFileName)
+import Shiva.Config
+import Shiva.Execute
+import Shiva.HTML
+import Shiva.Sources
 
-import Web.Scotty
-import Lucid
-import Network.Wai.Middleware.Static
-import Data.Text                     (Text)
-import Control.Monad.Reader          (runReaderT)
 import Control.Monad.Except          (runExceptT)
 import Control.Monad.IO.Class        (liftIO)
+import Control.Monad.Reader          (runReaderT)
+import Data.Text                     (Text)
+import Lucid
+import Network.Wai.Middleware.Static
+import Web.Scotty
 
 
 ---- Page generation ----
 
 runHtmlGen :: ShivaData -> (a -> Html ()) -> ShivaM a -> IO (Html ())
-runHtmlGen d f =
-    fmap (either error id) -- not unsafe due to 'catchErrorPage' below
-  . runExceptT
-  . flip runReaderT d
-  . catchErrorPage
-  . fmap f
+runHtmlGen d f = flip runReaderT d
+               . runShivaM
+               . catchErrorPage
+               . fmap f
 
 
 generateFeedPage :: ShivaData -> Text -> IO (Html ())
@@ -45,34 +43,34 @@ getStaticPath = getDataFileName "static"
 
 server :: FilePath -> ShivaData -> IO ()
 server staticPath d = scotty 7777 $ do
-  middleware $ staticPolicy (noDots >-> addBase staticPath)
+    middleware $ staticPolicy (noDots >-> addBase staticPath)
 
-  get "/" $ html . renderText $ mainPage
+    get "/" $ html . renderText $ mainPage
 
-  get "/sources/:x" $ do
-    x <- param "x"
-    html =<< renderText <$> liftIO (generateFeedPage d x)
+    get "/sources/:x" $ do
+        x <- param "x"
+        html =<< renderText <$> liftIO (generateFeedPage d x)
 
-  get "/content/dn/:x" $ do
-    x <- param "x"
-    html =<< renderText <$> liftIO (generateContentPage d x)
+    get "/content/dn/:x" $ do
+        x <- param "x"
+        html =<< renderText <$> liftIO (generateContentPage d x)
 
 
 -- | Run the server (as an installed executable).
 runServer :: [Source] -> IO ()
 runServer srcs = do
-  path <- getStaticPath
-  mconf <- runExceptT (loadEverything srcs)
-  case mconf of
-    Right conf -> server path conf
-    Left err   -> do
-      putStrLn "No valid config file found. Try running 'shiva setup' first."
-      putStrLn $ "Details: " ++ err
+    path <- getStaticPath
+    mconf <- runExceptT (loadEverything srcs)
+    case mconf of
+        Right conf -> server path conf
+        Left err   -> do
+            putStrLn "No valid config file found. Try running 'shiva setup' first."
+            putStrLn $ "Details: " ++ err
 
 -- | Run the server (from within ghci). Uses the repo's 'static' path instead of one
 --   set up by Stack or Cabal. Useful for testing out changes in styling or other static aspects.
-test :: IO ()
-test = runIOX (loadEverything sources) >>= server "static"
+testServer :: IO ()
+testServer = runIOX (loadEverything sources) >>= server "static"
 
 
 

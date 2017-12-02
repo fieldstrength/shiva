@@ -1,5 +1,5 @@
 name:                shiva
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            Practice a foreign language by reading news articles.
 description:         Practice a foreign language by reading news articles, with any needed
                      translations instantly available via hovering.
@@ -14,7 +14,8 @@ build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
-data-files:          static/css/style.css,
+data-files:          database/setup.sql,
+                     static/css/style.css,
                      static/fonts/bansheepilotblack.ttf
                      static/fonts/Sansation_Regular.ttf
                      static/fonts/Sansation_Light.ttf
@@ -29,34 +30,42 @@ library
                        Shiva.Database,
                        Shiva.Execute,
                        Shiva.Sources,
-                       Shiva.Get
+                       Shiva.Get,
+                       Shiva.Table.ArticleMetadata,
+                       Shiva.Table.ArticleContent,
+                       Shiva.Storage
 
   other-modules:       Paths_shiva,
                        Shiva.Utils
 
   other-extensions:    OverloadedStrings
 
-  build-depends:       base                  >=4.9     && <4.10,
-                       MicrosoftTranslator   >=0.1.0.2 && <0.2,
-                       text                  >=1.2     && <1.3,
-                       bytestring            >=0.10    && <0.11,
-                       yaml                  >=0.8     && <0.9,
-                       directory             >=1.2     && <1.3,
-                       mtl                   >=2.2     && <2.3,
-                       lucid                 >=2.9     && <2.10,
-                       http-conduit          >=2.1     && <2.2,
-                       process               >=1.4     && <1.5,
-                       tagsoup               >=0.14    && <0.15,
-                       scotty                >=0.11    && <0.12,
-                       wai-middleware-static >=0.8     && <0.9,
-                       xml                   >=1.3     && <1.4,
-                       feed                  >=0.3     && <0.4,
-                       regex-posix           >=0.95    && <0.96,
-                       postgresql-simple     >=0.5     && <0.6,
-                       containers            >=0.5     && <0.6,
-                       time                  >=1.6     && <1.7,
-                       safe                  >=0.3     && <0.4,
-                       mono-traversable      >=1.0     && <1.1
+  build-depends:       base,
+                       microsoft-translator,
+                       text,
+                       bytestring,
+                       yaml,
+                       directory,
+                       mtl,
+                       lucid,
+                       http-conduit,
+                       process,
+                       tagsoup,
+                       scotty,
+                       wai-middleware-static,
+                       xml,
+                       feed,
+                       regex-posix,
+                       postgresql-simple,
+                       containers,
+                       time,
+                       safe,
+                       mono-traversable,
+                       exceptions,
+                       opaleye,
+                       product-profunctors,
+                       stm,
+                       aeson
 
 
   hs-source-dirs:      src
@@ -72,8 +81,8 @@ executable shiva
   main-is:             Main.hs
 
   build-depends:       shiva,
-                       base            >=4.9  && <4.10,
-                       process         >=1.4  && <1.5
+                       base            >=4.9  && <4.11,
+                       process         >=1.4  && <1.7
 
 
   default-language:    Haskell2010

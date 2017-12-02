@@ -1,37 +1,37 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 -- | Assembles functionality from several modules to perform main business logic.
 module Shiva.Execute (
-  loadFeedByTitleCode,
-  generateResultFromName,
-  catchErrorPage,
+    loadFeedByTitleCode,
+    generateResultFromName,
+    catchErrorPage,
 ) where
 
-
-import Shiva.Feeds
 import Shiva.Config
-import Shiva.Database
-import Shiva.Translation
+import Shiva.Feeds
+import Shiva.Get           (httpGet)
 import Shiva.HTML
-import Shiva.Get                 (httpGet)
+import Shiva.Storage
+import Shiva.Translation
 
-import Data.Bifunctor            (first, second)
-import Prelude hiding            (lookup)
-import Data.List                 (sortBy)
-import Data.Map                  (Map,lookup,fromList)
+import Control.Monad.Catch (catchAll, throwM)
+import Control.Monad.State (lift, liftIO)
+import Data.Bifunctor      (first, second)
+import Data.List           (sortBy)
+import Data.Map            (Map, fromList, lookup)
+import Data.Text           (Text)
 import Lucid
-import Control.Monad.Error.Class (throwError, catchError)
-import Control.Monad.State       (lift)
-import Data.Text                 (Text,unpack,empty)
+import Prelude             hiding (lookup)
+import Translator
 
 
 readMetadataMap :: Source -> ShivaM (Map Text Text)
-readMetadataMap = fmap fromList . readPairs
+readMetadataMap = fmap fromList . readMetaPairs
 
 subStep :: Map Text Text -> FeedItem -> ([FeedItem],[FeedItem]) -> ([FeedItem],[FeedItem])
 subStep m i = case lookup (svTitle i) m of
-  Just eng -> first  (d:) where d = i {enTitle = eng}
-  Nothing  -> second (i:)
+    Just eng -> first  (d:) where d = i {enTitle = eng}
+    Nothing  -> second (i:)
 
 subMetadata :: Map Text Text -> [FeedItem] -> ([FeedItem],[FeedItem])
 subMetadata m = foldr (subStep m) ([],[])
@@ -40,75 +40,59 @@ subMetadata m = foldr (subStep m) ([],[])
 -- | Take list of feed items without english titles, fill them in by translating the swedish titles.
 translateTitles :: [FeedItem] -> ShivaM [FeedItem]
 translateTitles ds = do
-  ps <- translateSet $ svTitle <$> ds
-  return $ zipWith (\d p -> d {enTitle = english p }) ds ps
+    ps <- translateSet $ svTitle <$> ds
+    pure $ zipWith (\d p -> d {enTitle = transText p }) ds ps
 
 loadFeedData :: Source -> ShivaM FeedData
 loadFeedData src = do
-  fd <- lift $ loadFeedPrelim src
-  m  <- readMetadataMap src
-  let (xs,ys) = subMetadata m (feedItems fd)
-  zs <- translateTitles ys
-  writeAritcleMetadata zs
-  return $ fd { feedItems = sortBy (flip compare) (xs ++ zs) }
+    fd <- ShivaM <$> lift $ loadFeedPrelim src
+    m  <- readMetadataMap src
+    let (xs,ys) = subMetadata m (feedItems fd)
+    zs <- translateTitles ys
+    writeMetadata zs
+    pure $ fd { feedItems = sortBy (flip compare) (xs ++ zs) }
 
 -- | Load the RSS feed page for a given 'Source' by specifying it's 'titleCode'.
 loadFeedByTitleCode :: Text -> ShivaM FeedData
 loadFeedByTitleCode code = do
-  msrc <- codeLookup code
-  case msrc of
-    Just src -> loadFeedData src
-    Nothing -> throwError "I don't recognize any feed with that title"
+    msrc <- codeLookup code
+    case msrc of
+        Just src -> loadFeedData src
+        Nothing  -> throwM $ UnknownFeed code
 
 
 -- | If an error is encountered in the ShivaM monad, report the error with a webpage.
 catchErrorPage :: ShivaM (Html ()) -> ShivaM (Html ())
-catchErrorPage sh = catchError sh $ return . errorPage
+catchErrorPage = flip catchAll (pure . errorPage . show)
 
-
--- | Given swedish and english text separated by |, return the corresponding ShivaResult
-genResult :: Text -> Text -> ShivaResult
-genResult sv en =
-  let svs = barDiv sv
-      ens = barDiv en
-      ps  = zipWithDefault SvenskaPair empty svs ens
-  in ShivaResult (length svs == length ens) ps
-
-
--- | Take an URL fragment (functioning as an identifier) and text, then translate the text,
---   save the result to the database, and return it.
-translateSaveBodyText :: Text -> Text -> ShivaM ShivaResult
-translateSaveBodyText ufrag sv = do
-  TransResult {..} <- translateArticleText sv
-  writeContentData (ufrag,svTxt,enTxt)
-  return theresult
 
 retrieveAndExtract :: FeedItem -> ShivaM TransArticle
-retrieveAndExtract FeedItem {..} = do
-  txt <- lift $ httpGet urlFull
-  msrc <- srcLookup sourceName
-  case msrc of
-    Nothing -> throwError $ "retrieveContent: unknown sourceName '"++ unpack sourceName ++ "'."
-    Just Source {..} -> do
-      let contentTxt = contentExtractor txt
-      let img = imageExtractor txt
-      r <- translateSaveBodyText urlFrag contentTxt
-      return $ TransArticle svTitle urlFull img r
+retrieveAndExtract FeedItem {sourceName, urlFrag, urlFull, svTitle} = do
+    txt <- ShivaM <$> lift $ httpGet urlFull
+    msrc <- srcLookup sourceName
+    case msrc of
+        Nothing -> throwM $ UnknownSourceName sourceName
+        Just Source {contentExtractor, imageExtractor} -> do
+            let contentTxt = contentExtractor txt
+                img        = imageExtractor   txt
+            [ss] <- translateSentences [contentTxt]
+            liftIO $ putStrLn $ "MS Translator result: " ++ show ss
+            pure $ TransArticle svTitle urlFull urlFrag img ss
 
 
 generateContentResult :: FeedItem -> ShivaM TransArticle
-generateContentResult fi@FeedItem {..} = do
-  mx <- readContentData urlFrag
-  case mx of
-    Just (s,e) -> return $ TransArticle svTitle urlFull Nothing $ genResult s e
-    Nothing    -> retrieveAndExtract fi
+generateContentResult fi@FeedItem {urlFrag} = do
+    mx <- readContent urlFrag
+    case mx of
+        Nothing -> retrieveAndExtract fi
+        Just ta -> pure ta
 
 
 -- | Used to generate a web page for an article, identified by a part of a URL. This relies on the
 --   article metadata already being in the database, due to its appearing in an RSS listing page.
 generateResultFromName :: Text -> ShivaM TransArticle
 generateResultFromName urlfrag = do
-  md <- readArticleMetadata urlfrag
-  case md of
-    Just d  -> generateContentResult d
-    Nothing -> throwError "Article by that name seems to be missing."
+    md <- readMetadata urlfrag
+    case md of
+        Just d  -> generateContentResult d
+        Nothing -> throwM $ MissingArticle urlfrag
