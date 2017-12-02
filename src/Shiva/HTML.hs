@@ -14,16 +14,18 @@ module Shiva.HTML (
 
 ) where
 
-import Shiva.Config      (Source (..), titleCode)
-import Shiva.Feeds
-import Shiva.Sources     (sources)
-import Shiva.Translation
+import           Shiva.Config                (Source (..), titleCode)
+import           Shiva.Feeds
+import           Shiva.Sources               (sources)
+import           Shiva.Translation
 
-import Control.Monad     (unless, forM_)
-import Data.Monoid       ((<>))
-import Lucid.Base
-import Lucid.Html5
-import Translator
+import           Control.Monad               (forM_, unless)
+import           Data.Monoid                 ((<>))
+import           Lucid.Base
+import           Lucid.Html5
+import           Shiva.Table.ArticleMetadata (ArticleMetadata)
+import qualified Shiva.Table.ArticleMetadata as Meta
+import           Translator
 
 
 ---- Html Infra ----
@@ -55,14 +57,18 @@ htmlFromEither _ (Left str) = errorPage str
 
 ---- Main page ----
 
-mainPage :: Html ()
-mainPage = bodyTemplate "Shiva" $ do
+mainPage :: [ArticleMetadata] -> Html ()
+mainPage xs = bodyTemplate "Shiva" $ do
     h2_ "Feed Sources"
     div_ [class_ "contentarea"] $ do
         h3_ "Dagens Nyheter"
         ul_ $ mapM_ sourceItem sources
-    h2_ "Swedish Reddit"
-    div_ [class_ "contentarea"] "Coming soon..."
+    h2_ "Recently viewed"
+    div_ [class_ "contentarea"] .
+        ul_ . forM_ xs $ \meta ->
+            li_ $ a_ [href_ $ "/content/dn/" <> Meta.urlFrag meta] (toHtml $ Meta.svTitle meta)
+
+
 
 sourceItem :: Source -> Html ()
 sourceItem i = li_ $

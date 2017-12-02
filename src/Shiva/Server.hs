@@ -18,6 +18,7 @@ import Data.Text                     (Text)
 import Lucid
 import Network.Wai.Middleware.Static
 import Web.Scotty
+import           Shiva.Table.ArticleMetadata (getRecent)
 
 
 ---- Page generation ----
@@ -35,6 +36,8 @@ generateFeedPage d t = runHtmlGen d feedPage (loadFeedByTitleCode t)
 generateContentPage :: ShivaData -> Text -> IO (Html ())
 generateContentPage d t = runHtmlGen d articlePage (generateResultFromName t)
 
+generateMainPage :: ShivaData -> IO (Html ())
+generateMainPage d = runHtmlGen d mainPage (getRecent 20)
 
 ---- Server ----
 
@@ -45,7 +48,8 @@ server :: FilePath -> ShivaData -> IO ()
 server staticPath d = scotty 7777 $ do
     middleware $ staticPolicy (noDots >-> addBase staticPath)
 
-    get "/" $ html . renderText $ mainPage
+    get "/" $
+        html =<< renderText <$> liftIO (generateMainPage d)
 
     get "/sources/:x" $ do
         x <- param "x"

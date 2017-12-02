@@ -102,6 +102,13 @@ get :: Text -> ShivaM [ArticleMetadata]
 get frag = runDbAction $ \conn ->
     runQuery conn $ query frag
 
+getRecent :: Int -> ShivaM [ArticleMetadata]
+getRecent n
+    = runDbAction
+    . flip runQuery
+    . limit n
+    $ orderBy (desc createdAt) queryAll
+
 getPairs :: Text -> ShivaM [(Text, Text)]
 getPairs src = runDbAction $ \conn ->
     runQuery conn $ proc () -> do
