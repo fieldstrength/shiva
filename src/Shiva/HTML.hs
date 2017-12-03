@@ -23,9 +23,9 @@ import           Control.Monad               (forM_, unless)
 import           Data.Monoid                 ((<>))
 import           Lucid.Base
 import           Lucid.Html5
+import           Microsoft.Translator
 import           Shiva.Table.ArticleMetadata (ArticleMetadata)
 import qualified Shiva.Table.ArticleMetadata as Meta
-import           Translator
 
 
 ---- Html Infra ----

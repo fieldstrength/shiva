@@ -26,8 +26,8 @@ import           Data.Text                            (Text)
 import qualified Data.Text                            as T
 import           Database.PostgreSQL.Simple.FromField
 import           GHC.Generics
+import           Microsoft.Translator
 import           Opaleye
-import           Translator
 
 
 translateSentences :: [Text] -> ShivaM [[Sentence]]

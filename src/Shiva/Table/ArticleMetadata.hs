@@ -7,17 +7,17 @@
 
 module Shiva.Table.ArticleMetadata where
 
-import           Shiva.Config
-import           Shiva.Database             (runDbAction)
+import Shiva.Config
+import Shiva.Database             (runDbAction)
 
-import           Control.Arrow
-import           Control.Monad
-import           Data.Profunctor.Product.TH (makeAdaptorAndInstance)
-import           Data.Text                  (Text)
-import           Data.Time
-import           Database.PostgreSQL.Simple (Connection)
-import           GHC.Generics
-import           Opaleye                    hiding (null)
+import Control.Arrow
+import Control.Monad
+import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
+import Data.Text                  (Text)
+import Data.Time
+import Database.PostgreSQL.Simple (Connection)
+import GHC.Generics
+import Opaleye                    hiding (null)
 
 
 data ArticleMetadata' a b c d e f g h = ArticleMetadata

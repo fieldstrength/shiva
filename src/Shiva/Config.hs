@@ -60,12 +60,12 @@ import Data.Text.Encoding.Error    (UnicodeException)
 import Data.Yaml.Aeson             (FromJSON, ToJSON, decodeFileEither, encode)
 import Database.PostgreSQL.Simple
 import GHC.Generics                (Generic)
+import Microsoft.Translator
 import Network.HTTP.Conduit        (HttpException)
 import Prelude                     hiding (lookup, words, writeFile)
 import Safe                        (headMay)
 import System.Environment          (lookupEnv)
 import System.Process              (callCommand)
-import Translator
 
 
 deriving instance ToJSON SubscriptionKey
