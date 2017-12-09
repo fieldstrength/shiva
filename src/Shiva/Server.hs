@@ -17,7 +17,7 @@ import Control.Monad.Reader          (runReaderT)
 import Data.Text                     (Text)
 import Lucid
 import Network.Wai.Middleware.Static
-import Shiva.Table.ArticleContent   (getRecent)
+import Shiva.Table.ArticleContent   (getRecent, insert)
 import Web.Scotty
 
 
@@ -34,7 +34,9 @@ generateFeedPage :: ShivaData -> Text -> IO (Html ())
 generateFeedPage d t = runHtmlGen d feedPage (loadFeedByTitleCode t)
 
 generateContentPage :: ShivaData -> Text -> IO (Html ())
-generateContentPage d t = runHtmlGen d articlePage (generateResultFromName t)
+generateContentPage d t = runHtmlGen d articlePage $ do
+    art <- generateResultFromName t
+    art <$ insert [art]
 
 generateMainPage :: ShivaData -> IO (Html ())
 generateMainPage d = runHtmlGen d mainPage (getRecent 20)
