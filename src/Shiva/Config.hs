@@ -62,7 +62,7 @@ import Database.PostgreSQL.Simple
 import GHC.Generics                (Generic)
 import Microsoft.Translator
 import Network.HTTP.Conduit        (HttpException)
-import Prelude                     hiding (lookup, words, writeFile)
+import Prelude                     hiding (words, writeFile)
 import Safe                        (headMay)
 import System.Environment          (lookupEnv)
 import System.Process              (callCommand)
