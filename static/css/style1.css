@@ -9,7 +9,7 @@ body {
     margin: 0px auto 0px auto;
     width: 800px;
     height: 100%;
-    background: linear-gradient(180deg, rgb(238, 243, 220), rgb(100, 115, 130)) no-repeat;
+    background: linear-gradient(0deg, rgb(119, 105, 168), rgb(211, 227, 182)) no-repeat;
     background-color: rgb(119, 105, 168);
     background-attachment: fixed;
     font-family: Sansation;
@@ -20,7 +20,7 @@ b, strong {
 }
 
 a {
-  color: rgb(50, 70, 200);
+  color: rgb(93, 158, 224);
   text-decoration: none;
   border-bottom: 1px solid rgb(181, 123, 227);
 }
@@ -72,11 +72,11 @@ img.articleImg {
 }
 
 h1 {
-    color: #435da1;
-    font-size: 26px;
+    color: #6d456a;
+    font-size: 24px;
     font-family: Banshee;
     padding: 30px 0px 5px 0px;
-    border-bottom: 2px solid rgb(120,0,0);
+    border-bottom: 2px solid rgb(64, 39, 58);
 }
 
 h2 {

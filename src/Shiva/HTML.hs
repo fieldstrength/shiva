@@ -43,7 +43,7 @@ bodyTemplate title bod = doctypehtml_ $ do
 
 
 errorPage :: String -> Html ()
-errorPage msg = bodyTemplate "Shiva Translate" $
+errorPage msg = bodyTemplate "Shiva" $
     div_ [class_ "warning"] $ do
         b_ "Error: "
         p_ $ toHtml msg
@@ -56,7 +56,7 @@ htmlFromEither _ (Left str) = errorPage str
 ---- Main page ----
 
 mainPage :: Html ()
-mainPage = bodyTemplate "Shiva Translation" $ do
+mainPage = bodyTemplate "Shiva" $ do
     h2_ "Feed Sources"
     div_ [class_ "contentarea"] $ do
         h3_ "Dagens Nyheter"
@@ -72,7 +72,7 @@ sourceItem i = li_ $
 ---- Feed listing pages ----
 
 dnTitle :: String
-dnTitle = "Articles from Dagens Nyheter"
+dnTitle = "Dagens Nyheter"
 
 feedPage :: FeedData -> Html ()
 feedPage (FeedData xs errs) = bodyTemplate dnTitle $ do
@@ -101,7 +101,7 @@ renderFeedItem d = do
 ---- Article content pages ----
 
 articlePage :: TransArticle -> Html ()
-articlePage TransArticle {..} = bodyTemplate "Shiva Translate" $ do
+articlePage TransArticle {..} = bodyTemplate "Shiva" $ do
     h2_ $ toHtml thetitle
     p_ $ do
         "Translated from "
