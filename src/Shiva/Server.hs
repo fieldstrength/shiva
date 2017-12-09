@@ -17,7 +17,7 @@ import Control.Monad.Reader          (runReaderT)
 import Data.Text                     (Text)
 import Lucid
 import Network.Wai.Middleware.Static
-import Shiva.Table.ArticleContent   (getRecent, insert)
+import Shiva.Table.ArticleContent    (getRecent, insert)
 import Web.Scotty
 
 
