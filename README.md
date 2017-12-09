@@ -15,12 +15,6 @@ An article page will look something like this.
 
 ### Usage
 
-##### Installation
-
-It is recommended to install with Stack.
-
-This package needs [my branch](https://github.com/BlackBrane/Microsoft-Translator-Haskell) of the MicrosoftTranslator package, and using Stack is the the easiest way to ensure that this correct version of that dependency is used.
-
 ##### API access
 
 Translation is performed via the Microsoft Translator API, which is free for up to 2M characters per month.
