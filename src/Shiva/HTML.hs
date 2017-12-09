@@ -14,18 +14,18 @@ module Shiva.HTML (
 
 ) where
 
-import           Shiva.Config                (Source (..), titleCode)
+import           Shiva.Config               (Source (..), titleCode)
 import           Shiva.Feeds
-import           Shiva.Sources               (sources)
+import           Shiva.Sources              (sources)
 import           Shiva.Translation
 
-import           Control.Monad               (forM_, unless)
-import           Data.Monoid                 ((<>))
+import           Control.Monad              (forM_, unless)
+import           Data.Monoid                ((<>))
 import           Lucid.Base
 import           Lucid.Html5
 import           Microsoft.Translator
-import           Shiva.Table.ArticleMetadata (ArticleMetadata)
-import qualified Shiva.Table.ArticleMetadata as Meta
+import           Shiva.Table.ArticleContent (ArticleContent)
+import qualified Shiva.Table.ArticleContent as Article
 
 
 ---- Html Infra ----
@@ -57,7 +57,7 @@ htmlFromEither _ (Left str) = errorPage str
 
 ---- Main page ----
 
-mainPage :: [ArticleMetadata] -> Html ()
+mainPage :: [ArticleContent] -> Html ()
 mainPage xs = bodyTemplate "Shiva" $ do
     h2_ "Feed Sources"
     div_ [class_ "contentarea"] $ do
@@ -66,7 +66,8 @@ mainPage xs = bodyTemplate "Shiva" $ do
     h2_ "Recently viewed"
     div_ [class_ "contentarea"] .
         ul_ . forM_ xs $ \meta ->
-            li_ $ a_ [href_ $ "/content/dn/" <> Meta.urlFrag meta] (toHtml $ Meta.svTitle meta)
+            li_ . a_ [href_ $ "/content/dn/" <> Article.urlFrag meta] .
+                toHtml $ Article.urlFrag meta
 
 
 
