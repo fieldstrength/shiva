@@ -9,20 +9,20 @@ module Shiva.Execute (
 
 import Shiva.Config
 import Shiva.Feeds
-import Shiva.Get           (httpGet)
+import Shiva.Get            (httpGet)
 import Shiva.HTML
 import Shiva.Storage
 import Shiva.Translation
 
-import Control.Monad.Catch (catchAll, throwM)
-import Control.Monad.State (lift, liftIO)
-import Data.Bifunctor      (first, second)
-import Data.List           (sortBy)
-import Data.Map            (Map, fromList, lookup)
-import Data.Text           (Text)
+import Control.Monad.Catch  (catchAll, throwM)
+import Control.Monad.State  (lift, liftIO)
+import Data.Bifunctor       (first, second)
+import Data.List            (sortBy)
+import Data.Map             (Map, fromList, lookup)
+import Data.Text            (Text)
 import Lucid
-import Prelude             hiding (lookup)
-import Translator
+import Microsoft.Translator
+import Prelude              hiding (lookup)
 
 
 readMetadataMap :: Source -> ShivaM (Map Text Text)
@@ -91,8 +91,8 @@ generateContentResult fi@FeedItem {urlFrag} = do
 -- | Used to generate a web page for an article, identified by a part of a URL. This relies on the
 --   article metadata already being in the database, due to its appearing in an RSS listing page.
 generateResultFromName :: Text -> ShivaM TransArticle
-generateResultFromName urlfrag = do
-    md <- readMetadata urlfrag
-    case md of
-        Just d  -> generateContentResult d
-        Nothing -> throwM $ MissingArticle urlfrag
+generateResultFromName frag = do
+    mmd <- readMetadata frag
+    md <- maybe (throwM $ MissingArticle frag) pure mmd
+    mArt <- readContent frag
+    maybe (generateContentResult md) pure mArt

@@ -68,3 +68,10 @@ get frag = runDbAction $ \conn ->
         x <- queryAll -< ()
         restrict -< urlFrag x .=== pgStrictText frag
         returnA -< x
+
+getRecent :: Int -> ShivaM [ArticleContent]
+getRecent n
+    = runDbAction
+    . flip runQuery
+    . limit n
+    $ orderBy (desc createdAt) queryAll

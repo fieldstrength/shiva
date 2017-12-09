@@ -10,7 +10,7 @@ module Shiva.Extract (
 
 import Data.Sequences          (takeWhile)
 import Data.Text               (Text)
-import Prelude                 hiding (readFile, takeWhile, writeFile)
+import Prelude                 hiding (takeWhile)
 import Safe                    (headMay, tailSafe)
 import Text.HTML.TagSoup
 import Text.HTML.TagSoup.Match

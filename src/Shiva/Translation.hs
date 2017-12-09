@@ -1,10 +1,8 @@
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE StandaloneDeriving    #-}
-{-# LANGUAGE TypeApplications      #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 
 module Shiva.Translation (
@@ -26,8 +24,8 @@ import           Data.Text                            (Text)
 import qualified Data.Text                            as T
 import           Database.PostgreSQL.Simple.FromField
 import           GHC.Generics
+import           Microsoft.Translator
 import           Opaleye
-import           Translator
 
 
 translateSentences :: [Text] -> ShivaM [[Sentence]]

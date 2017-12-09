@@ -3,8 +3,5 @@ flags: {}
 extra-package-dbs: []
 packages:
 - .
-- location:
-    git: https://github.com/BlackBrane/microsoft-translator/
-    commit: 399cf0f65ac9093d959c50e86b7a5d7dcbae8441
-  extra-dep: true
-extra-deps: []
+extra-deps:
+    - microsoft-translator-0.1.0.0
